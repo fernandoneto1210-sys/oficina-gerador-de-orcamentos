@@ -1,5 +1,5 @@
-// script.js — Oficina de Turismo
-// REGRA DE OURO: jsPDF NUNCA no topo — sempre dentro de _buildPDF()
+// script.js - Oficina de Turismo
+// REGRA ABSOLUTA: jsPDF NUNCA no topo - sempre dentro de _buildPDF()
 
 var STORAGE_KEY = 'oficina_orcamentos_v3';
 var COUNTER_KEY = 'oficina_contador_v3';
@@ -12,11 +12,9 @@ window.addEventListener('load', function () {
   document.getElementById('btnLimpar').onclick = limparFormulario;
   document.getElementById('btnNovo')  .onclick = limparFormulario;
 
-  // data de hoje automatica
-  var hoje = new Date();
-  var iso  = hoje.toISOString().split('T')[0];
+  var hoje = new Date().toISOString().split('T')[0];
   var elData = document.getElementById('dataOrcamento');
-  if (elData && !elData.value) elData.value = iso;
+  if (elData && !elData.value) elData.value = hoje;
 
   carregarLista();
 });
@@ -27,7 +25,10 @@ function proximoNumero() {
   localStorage.setItem(COUNTER_KEY, String(n));
   return n;
 }
-function fmt(n) { return String(n).padStart(3, '0'); }
+
+function fmt(n) {
+  return String(n).padStart(3, '0');
+}
 
 // ── BADGE ─────────────────────────────────────────────────
 function mostrarBadge(numero) {
@@ -38,6 +39,7 @@ function mostrarBadge(numero) {
   vl.textContent   = 'N ' + fmt(numero);
   el.style.display = 'flex';
 }
+
 function ocultarBadge() {
   estadoAtual = { id: null, numero: null };
   var el = document.getElementById('numeroBadge');
@@ -62,7 +64,7 @@ function calcularTotal() {
     return;
   }
   tEl.textContent = brFmt(np * pp);
-  if (dEl) dEl.textContent = np + ' pessoa(s)  x  ' + brFmt(pp);
+  if (dEl) dEl.textContent = np + ' pessoa(s) x ' + brFmt(pp);
 }
 
 function brFmt(v) {
@@ -78,6 +80,7 @@ function gv(id) {
   var el = document.getElementById(id);
   return el ? el.value.trim() : '';
 }
+
 function sv(id, val) {
   var el = document.getElementById(id);
   if (el) el.value = val || '';
@@ -120,8 +123,7 @@ function limparFormulario() {
   preencherFormulario({});
   ocultarBadge();
   removerAtivo();
-  var hoje = new Date().toISOString().split('T')[0];
-  sv('dataOrcamento', hoje);
+  sv('dataOrcamento', new Date().toISOString().split('T')[0]);
   var c = document.getElementById('cliente');
   if (c) c.focus();
 }
@@ -131,6 +133,7 @@ function obterLista() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
   catch (e) { return []; }
 }
+
 function gravarLista(lista) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 }
@@ -211,40 +214,38 @@ function carregarLista() {
     li.dataset.id = orc.id;
     if (orc.id === estadoAtual.id) li.classList.add('ativo');
 
-    // linha do topo
     var topo = document.createElement('div');
-    topo.style.cssText = 'display:flex;align-items:flex-start;' +
-                         'justify-content:space-between;gap:6px;';
+    topo.style.cssText =
+      'display:flex;align-items:flex-start;' +
+      'justify-content:space-between;gap:6px;';
 
-    // numero + titulo
     var wrap = document.createElement('div');
     wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;';
 
     if (orc.numero) {
       var num = document.createElement('span');
-      num.style.cssText = 'background:#2c8c3a;color:#fff;font-size:0.68rem;' +
-                          'font-weight:700;border-radius:4px;padding:2px 6px;' +
-                          'flex-shrink:0;';
+      num.style.cssText =
+        'background:#2c8c3a;color:#fff;font-size:0.68rem;' +
+        'font-weight:700;border-radius:4px;padding:2px 6px;flex-shrink:0;';
       num.textContent = fmt(orc.numero);
       wrap.appendChild(num);
     }
 
     var txt = document.createElement('div');
     txt.className   = 'orcamento-title';
-    txt.textContent = (orc.cliente || 'Sem nome') + ' — ' +
-                      (orc.destino  || 'Sem destino');
+    txt.textContent = (orc.cliente || 'Sem nome') +
+                      ' — ' + (orc.destino || 'Sem destino');
     wrap.appendChild(txt);
 
-    // botao excluir
     var del = document.createElement('button');
     del.textContent = '\uD83D\uDDD1';
     del.title       = 'Excluir';
-    del.style.cssText = 'border:none;background:transparent;cursor:pointer;' +
-                        'font-size:14px;padding:0 2px;opacity:0.5;flex-shrink:0;';
+    del.style.cssText =
+      'border:none;background:transparent;cursor:pointer;' +
+      'font-size:14px;padding:0 2px;opacity:0.5;flex-shrink:0;';
     del.onmouseover = function () { del.style.opacity = '1'; };
     del.onmouseout  = function () { del.style.opacity = '0.5'; };
 
-    // IIFE para capturar orc correto
     (function (oid, onum) {
       del.onclick = function (e) {
         e.stopPropagation();
@@ -256,7 +257,6 @@ function carregarLista() {
     topo.appendChild(wrap);
     topo.appendChild(del);
 
-    // meta
     var meta = document.createElement('div');
     meta.className = 'orcamento-meta';
     var pp = [];
@@ -269,7 +269,6 @@ function carregarLista() {
     li.appendChild(topo);
     li.appendChild(meta);
 
-    // click para carregar
     (function (o, item) {
       item.onclick = function () {
         preencherFormulario(o);
@@ -286,7 +285,7 @@ function carregarLista() {
   });
 }
 
-// ── IMAGEM PARA BASE64 ────────────────────────────────────
+// ── IMAGEM BASE64 ─────────────────────────────────────────
 function imgBase64(src) {
   return new Promise(function (resolve) {
     var img = new Image();
@@ -322,7 +321,7 @@ function gerarPDF() {
 
 function _buildPDF(d, logoB, seloB) {
 
-  // jsPDF SEMPRE AQUI DENTRO — nunca no topo do arquivo
+  // jsPDF SEMPRE AQUI DENTRO - NUNCA no topo do arquivo
   var jsPDF = window.jspdf.jsPDF;
   var doc   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
@@ -333,7 +332,6 @@ function _buildPDF(d, logoB, seloB) {
   var HEND = 42;
   var y    = HEND + 6;
 
-  // ── helpers ─────────────────────────────────────────────
   function rst() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
@@ -349,14 +347,16 @@ function _buildPDF(d, logoB, seloB) {
     y = HEND + 6;
   }
 
-  // ── cabecalho: fundo cinza claro + logo + selo ───────────
   function cabecalho() {
+    // fundo cinza claro
     doc.setFillColor(245, 245, 245);
     doc.rect(0, 0, PW, HEND - 4, 'F');
+    // linha azul
     doc.setDrawColor(30, 74, 125);
     doc.setLineWidth(1.5);
     doc.line(0, HEND - 4, PW, HEND - 4);
 
+    // logo
     if (logoB) {
       try { doc.addImage(logoB, 'PNG', ML, 5, 0, 32); }
       catch (e) {
@@ -370,12 +370,13 @@ function _buildPDF(d, logoB, seloB) {
       doc.text('Oficina de Turismo', ML, 22);
     }
 
+    // selo
     if (seloB) {
       try { doc.addImage(seloB, 'PNG', PW - MR - 34, 3, 0, 34); }
       catch (e) {}
     }
 
-    // numero do orcamento no cabecalho
+    // numero do orcamento
     if (d.numero) {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
       doc.setTextColor(100, 100, 100);
@@ -384,7 +385,6 @@ function _buildPDF(d, logoB, seloB) {
     }
   }
 
-  // ── rodape ───────────────────────────────────────────────
   function rodape(pag, tot) {
     var ry = PH - 20, cx = PW / 2;
     doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.25);
@@ -409,7 +409,7 @@ function _buildPDF(d, logoB, seloB) {
     doc.text('Pag. ' + pag + ' / ' + tot, PW - MR, ry + 12, { align: 'right' });
   }
 
-  // ── titulo de secao — ZERO EMOJI, texto ASCII puro ───────
+  // titulo de secao - ZERO EMOJI, texto ASCII puro
   function sec(txt) {
     chk(14);
     doc.setFillColor(30, 74, 125);
@@ -421,7 +421,6 @@ function _buildPDF(d, logoB, seloB) {
     rst();
   }
 
-  // ── campo label: valor ───────────────────────────────────
   function campo(label, valor) {
     if (!valor) return;
     chk(7);
@@ -434,7 +433,6 @@ function _buildPDF(d, logoB, seloB) {
     y += 6.5;
   }
 
-  // ── bloco de texto com quebra de pagina ──────────────────
   function bloco(txt, sp) {
     if (!txt) return;
     rst();
@@ -451,9 +449,7 @@ function _buildPDF(d, logoB, seloB) {
     if (sp) y += sp;
   }
 
-  // ════════════════════════════════════════════════════════
-  // CONSTROI O PDF
-  // ════════════════════════════════════════════════════════
+  // ── CONSTROI ─────────────────────────────────────────────
   cabecalho();
   rst();
 
@@ -472,7 +468,7 @@ function _buildPDF(d, logoB, seloB) {
   doc.line(ML, y + 1, PW - MR, y + 1);
   y += 8;
 
-  // dados gerais em 2 colunas
+  // dados gerais 2 colunas
   rst(); doc.setFontSize(9.5);
   var c1 = ML, c2 = ML + TW / 2 + 4;
   var dados = [
@@ -498,7 +494,7 @@ function _buildPDF(d, logoB, seloB) {
   }
   y += 10;
 
-  // ROTEIRO — titulo ASCII puro, SEM EMOJI
+  // ROTEIRO - titulo ASCII puro, SEM EMOJI
   sec('ROTEIRO / PROGRAMACAO DA VIAGEM');
   bloco(d.roteiro, 5);
 
