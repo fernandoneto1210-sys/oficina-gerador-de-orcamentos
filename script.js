@@ -1,20 +1,18 @@
 // script.js - Oficina de Turismo
-// REGRA ABSOLUTA: jsPDF NUNCA no topo - sempre dentro de _buildPDF()
+// REGRA: jsPDF NUNCA no topo — sempre dentro de _buildPDF()
 
 var STORAGE_KEY = 'oficina_orcamentos_v3';
 var COUNTER_KEY = 'oficina_contador_v3';
 var estadoAtual = { id: null, numero: null };
 
-// ── INICIO ────────────────────────────────────────────────
 window.addEventListener('load', function () {
   document.getElementById('btnSalvar').onclick = salvarOrcamento;
-  document.getElementById('btnGerar') .onclick = gerarPDF;
+  document.getElementById('btnGerar').onclick  = gerarPDF;
   document.getElementById('btnLimpar').onclick = limparFormulario;
-  document.getElementById('btnNovo')  .onclick = limparFormulario;
+  document.getElementById('btnNovo').onclick   = limparFormulario;
 
-  var hoje = new Date().toISOString().split('T')[0];
   var elData = document.getElementById('dataOrcamento');
-  if (elData && !elData.value) elData.value = hoje;
+  if (elData) elData.value = new Date().toISOString().split('T')[0];
 
   carregarLista();
 });
@@ -44,35 +42,6 @@ function ocultarBadge() {
   estadoAtual = { id: null, numero: null };
   var el = document.getElementById('numeroBadge');
   if (el) el.style.display = 'none';
-}
-
-// ── CALCULADORA ───────────────────────────────────────────
-function calcularTotal() {
-  var npEl = document.getElementById('numeroPessoas');
-  var ppEl = document.getElementById('precoPorPessoa');
-  var tEl  = document.getElementById('totalCalculado');
-  var dEl  = document.getElementById('totalDetalhe');
-  if (!npEl || !ppEl || !tEl) return;
-
-  var np  = parseInt(npEl.value, 10);
-  var raw = ppEl.value.replace(/[^\d,\.]/g, '').replace(',', '.');
-  var pp  = parseFloat(raw);
-
-  if (!np || np <= 0 || isNaN(pp) || pp <= 0) {
-    tEl.textContent = '-';
-    if (dEl) dEl.textContent = '';
-    return;
-  }
-  tEl.textContent = brFmt(np * pp);
-  if (dEl) dEl.textContent = np + ' pessoa(s) x ' + brFmt(pp);
-}
-
-function brFmt(v) {
-  return 'R$ ' + v.toFixed(2)
-    .replace('.', ',')
-    .replace(/
-\B
-(?=(\d{3})+(?!\d))/g, '.');
 }
 
 // ── FORM ──────────────────────────────────────────────────
@@ -116,7 +85,6 @@ function preencherFormulario(d) {
   sv('ocupacao',       d.ocupacao);
   sv('pagamento',      d.pagamento);
   sv('observacoes',    d.observacoes);
-  calcularTotal();
 }
 
 function limparFormulario() {
@@ -181,8 +149,9 @@ function excluirOrcamento(id) {
 
 // ── SIDEBAR ───────────────────────────────────────────────
 function removerAtivo() {
-  document.querySelectorAll('.orcamento-item.ativo')
-    .forEach(function (el) { el.classList.remove('ativo'); });
+  document.querySelectorAll('.orcamento-item.ativo').forEach(function (el) {
+    el.classList.remove('ativo');
+  });
 }
 
 function destacarAtivo(id) {
@@ -220,7 +189,8 @@ function carregarLista() {
       'justify-content:space-between;gap:6px;';
 
     var wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;';
+    wrap.style.cssText =
+      'display:flex;align-items:flex-start;gap:4px;flex:1;';
 
     if (orc.numero) {
       var num = document.createElement('span');
@@ -234,17 +204,17 @@ function carregarLista() {
     var txt = document.createElement('div');
     txt.className   = 'orcamento-title';
     txt.textContent = (orc.cliente || 'Sem nome') +
-                      ' — ' + (orc.destino || 'Sem destino');
+                      ' - ' + (orc.destino || 'Sem destino');
     wrap.appendChild(txt);
 
     var del = document.createElement('button');
-    del.textContent = '\uD83D\uDDD1';
-    del.title       = 'Excluir';
+    del.textContent   = '\uD83D\uDDD1';
+    del.title         = 'Excluir';
     del.style.cssText =
       'border:none;background:transparent;cursor:pointer;' +
       'font-size:14px;padding:0 2px;opacity:0.5;flex-shrink:0;';
-    del.onmouseover = function () { del.style.opacity = '1'; };
-    del.onmouseout  = function () { del.style.opacity = '0.5'; };
+    del.onmouseover = function () { this.style.opacity = '1'; };
+    del.onmouseout  = function () { this.style.opacity = '0.5'; };
 
     (function (oid, onum) {
       del.onclick = function (e) {
@@ -259,12 +229,12 @@ function carregarLista() {
 
     var meta = document.createElement('div');
     meta.className = 'orcamento-meta';
-    var pp = [];
+    var partes = [];
     if (orc.dataOrcamento)
-      pp.push(orc.dataOrcamento.split('-').reverse().join('/'));
-    if (orc.periodo)       pp.push(orc.periodo);
-    if (orc.numeroPessoas) pp.push(orc.numeroPessoas + ' pax');
-    meta.textContent = pp.join(' | ') || '-';
+      partes.push(orc.dataOrcamento.split('-').reverse().join('/'));
+    if (orc.periodo)       partes.push(orc.periodo);
+    if (orc.numeroPessoas) partes.push(orc.numeroPessoas + ' pax');
+    meta.textContent = partes.join(' | ') || '-';
 
     li.appendChild(topo);
     li.appendChild(meta);
@@ -325,8 +295,7 @@ function _buildPDF(d, logoB, seloB) {
   var jsPDF = window.jspdf.jsPDF;
   var doc   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  var PW   = 210, PH = 297;
-  var ML   = 18,  MR = 18;
+  var PW = 210, PH = 297, ML = 18, MR = 18;
   var TW   = PW - ML - MR;
   var RBOT = PH - 28;
   var HEND = 42;
@@ -348,37 +317,35 @@ function _buildPDF(d, logoB, seloB) {
   }
 
   function cabecalho() {
-    // fundo cinza claro
     doc.setFillColor(245, 245, 245);
     doc.rect(0, 0, PW, HEND - 4, 'F');
-    // linha azul
     doc.setDrawColor(30, 74, 125);
     doc.setLineWidth(1.5);
     doc.line(0, HEND - 4, PW, HEND - 4);
 
-    // logo
     if (logoB) {
       try { doc.addImage(logoB, 'PNG', ML, 5, 0, 32); }
       catch (e) {
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
         doc.setTextColor(30, 74, 125);
         doc.text('Oficina de Turismo', ML, 22);
       }
     } else {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
       doc.setTextColor(30, 74, 125);
       doc.text('Oficina de Turismo', ML, 22);
     }
 
-    // selo
     if (seloB) {
       try { doc.addImage(seloB, 'PNG', PW - MR - 34, 3, 0, 34); }
       catch (e) {}
     }
 
-    // numero do orcamento
     if (d.numero) {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
       doc.setTextColor(100, 100, 100);
       doc.text('Orcamento N ' + fmt(d.numero),
                PW - MR, HEND - 8, { align: 'right' });
@@ -387,9 +354,11 @@ function _buildPDF(d, logoB, seloB) {
 
   function rodape(pag, tot) {
     var ry = PH - 20, cx = PW / 2;
-    doc.setDrawColor(200, 200, 200); doc.setLineWidth(0.25);
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.25);
     doc.line(ML, ry - 2, PW - MR, ry - 2);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     doc.text(
       'Oficina de Turismo  -  Tel / WhatsApp: (35) 98862-2943  -  (35) 98844-5517',
@@ -399,22 +368,26 @@ function _buildPDF(d, logoB, seloB) {
       'Instagram: @oficinadeturismo  -  Site: www.oficinatur.com.br',
       cx, ry + 7, { align: 'center' }
     );
-    doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 74, 125);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 74, 125);
     doc.text(
       '30 anos de experiencia em viagens e grupos acompanhados',
       cx, ry + 12, { align: 'center' }
     );
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
     doc.setTextColor(180, 180, 180);
-    doc.text('Pag. ' + pag + ' / ' + tot, PW - MR, ry + 12, { align: 'right' });
+    doc.text('Pag. ' + pag + ' / ' + tot,
+             PW - MR, ry + 12, { align: 'right' });
   }
 
-  // titulo de secao - ZERO EMOJI, texto ASCII puro
+  // TITULO SECAO — ZERO EMOJI, texto ASCII puro
   function sec(txt) {
     chk(14);
     doc.setFillColor(30, 74, 125);
     doc.roundedRect(ML, y - 4.5, TW, 9, 2, 2, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
     doc.setTextColor(255, 255, 255);
     doc.text(txt, ML + 5, y + 1.5);
     y += 12;
@@ -424,11 +397,13 @@ function _buildPDF(d, logoB, seloB) {
   function campo(label, valor) {
     if (!valor) return;
     chk(7);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
     doc.setTextColor(30, 74, 125);
     var lw = doc.getTextWidth(label + '  ');
     doc.text(label, ML, y);
-    doc.setFont('helvetica', 'normal'); doc.setTextColor(40, 40, 40);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(40, 40, 40);
     doc.text(valor, ML + lw, y);
     y += 6.5;
   }
@@ -449,36 +424,36 @@ function _buildPDF(d, logoB, seloB) {
     if (sp) y += sp;
   }
 
-  // ── CONSTROI ─────────────────────────────────────────────
+  // CONSTROI O PDF
   cabecalho();
   rst();
 
-  // titulo principal
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
   doc.setTextColor(30, 74, 125);
   doc.text('Orcamento de Viagem', ML, y);
   y += 7;
 
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
   doc.setTextColor(44, 140, 58);
   doc.text(d.destino, ML, y);
   y += 2;
 
-  doc.setDrawColor(44, 140, 58); doc.setLineWidth(0.6);
+  doc.setDrawColor(44, 140, 58);
+  doc.setLineWidth(0.6);
   doc.line(ML, y + 1, PW - MR, y + 1);
   y += 8;
 
-  // dados gerais 2 colunas
-  rst(); doc.setFontSize(9.5);
+  rst();
+  doc.setFontSize(9.5);
   var c1 = ML, c2 = ML + TW / 2 + 4;
   var dados = [
-    d.cliente       ? ['Cliente:',      d.cliente]      : null,
-    d.saida         ? ['Saida de:',     d.saida]        : null,
-    d.periodo       ? ['Periodo:',      d.periodo]      : null,
-    d.dataOrcamento ? ['Data:',
-      d.dataOrcamento.split('-').reverse().join('/')]    : null,
-    d.numeroPessoas ? ['Passageiros:',
-      d.numeroPessoas + ' pessoa(s)']                   : null
+    d.cliente       ? ['Cliente:',      d.cliente]                              : null,
+    d.saida         ? ['Saida de:',     d.saida]                                : null,
+    d.periodo       ? ['Periodo:',      d.periodo]                              : null,
+    d.dataOrcamento ? ['Data:',         d.dataOrcamento.split('-').reverse().join('/')] : null,
+    d.numeroPessoas ? ['Passageiros:',  d.numeroPessoas + ' pessoa(s)']         : null
   ].filter(Boolean);
 
   for (var i = 0; i < dados.length; i++) {
@@ -494,45 +469,31 @@ function _buildPDF(d, logoB, seloB) {
   }
   y += 10;
 
-  // ROTEIRO - titulo ASCII puro, SEM EMOJI
+  // TITULOS 100% ASCII - ZERO EMOJI
   sec('ROTEIRO / PROGRAMACAO DA VIAGEM');
   bloco(d.roteiro, 5);
 
-  // INVESTIMENTO
   sec('INVESTIMENTO');
   campo('Valor por pessoa:', d.precoPorPessoa);
   if (d.ocupacao) campo('Base de ocupacao:', d.ocupacao);
-
-  // total calculado automaticamente
-  var np2 = parseInt(d.numeroPessoas, 10);
-  var pp2 = parseFloat(
-    (d.precoPorPessoa || '').replace(/[^\d,\.]/g, '').replace(',', '.')
-  );
-  if (np2 > 0 && pp2 > 0) {
-    campo('Total do grupo (' + np2 + ' pax):', brFmt(np2 * pp2));
-  }
   y += 2;
 
-  // PAGAMENTO
   if (d.pagamento) {
     sec('FORMA DE PAGAMENTO');
     bloco(d.pagamento, 5);
   }
 
-  // OBSERVACOES
   if (d.observacoes) {
     sec('OBSERVACOES / CONDICOES GERAIS');
     bloco(d.observacoes, 5);
   }
 
-  // rodape em TODAS as paginas
   var tot = doc.getNumberOfPages();
   for (var p = 1; p <= tot; p++) {
     doc.setPage(p);
     rodape(p, tot);
   }
 
-  // salvar arquivo
   var nd  = (d.destino || 'Oficina').replace(/[^\wÀ-ú]+/g, '_').slice(0, 25);
   var nc  = (d.cliente || '').replace(/[^\wÀ-ú]+/g, '_').slice(0, 20);
   var num = d.numero ? '_' + fmt(d.numero) : '';
