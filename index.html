@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+
 <div class="app-container">
 
   <header class="app-header">
@@ -19,200 +20,158 @@
         <p>Oficina de Turismo &bull; 30 anos transformando sonhos em viagem</p>
       </div>
     </div>
-    <div class="header-right">
+    <div class="footer-right">
       <img src="selo30anos.png" alt="30 Anos"
-           class="selo-header" onerror="this.style.display='none'" />
+           style="height:60px;width:auto;"
+           onerror="this.style.display='none'" />
     </div>
   </header>
 
   <div class="main-content">
+
     <section class="form-section">
 
-      <!-- Badge numero -->
-      <div class="numero-badge" id="numeroBadge" style="display:none;">
-        <span class="badge-label">Orcamento em edicao:</span>
-        <strong class="badge-numero" id="numeroAtualValor"></strong>
-        <button class="btn-novo" id="btnNovo">+ Novo</button>
+      <div id="numeroBadge" style="display:none;
+           background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
+           border:2px solid #2c8c3a;border-radius:8px;
+           padding:8px 14px;margin-bottom:14px;
+           display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="color:#1e4a7d;font-weight:500;">Orcamento em edicao:</span>
+        <strong id="numeroAtualValor" style="color:#2c8c3a;font-size:1.1rem;"></strong>
+        <button id="btnNovo" class="btn secondary"
+                style="margin-left:auto;padding:4px 14px;font-size:0.82rem;">
+          + Novo
+        </button>
       </div>
 
-      <!-- Busca -->
-      <div class="search-box">
-        <input type="text" id="campoBusca"
-               placeholder="Buscar por cliente ou destino..."
-               oninput="filtrarLista()" />
-      </div>
+      <h2>Dados do Orcamento</h2>
 
-      <!-- Cliente -->
-      <div class="form-card">
-        <div class="form-card-header"><h3>Informacoes do Cliente</h3></div>
-        <div class="form-card-body">
-          <div class="field-row">
-            <div class="field-group">
-              <label for="cliente">Nome do cliente</label>
-              <input type="text" id="cliente" placeholder="Ex: Joao Silva" />
-            </div>
-            <div class="field-group">
-              <label for="dataOrcamento">Data do orcamento</label>
-              <input type="date" id="dataOrcamento" />
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field-group">
-              <label for="numeroPessoas">N de pessoas</label>
-              <input type="number" id="numeroPessoas"
-                     placeholder="Ex: 20" min="1"
-                     oninput="calcularTotal()" />
-            </div>
-            <div class="field-group">
-              <label for="saida">Cidade de saida</label>
-              <input type="text" id="saida"
-                     placeholder="Ex: Pocos de Caldas / MG" />
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field-group">
-              <label for="validade">Validade do orcamento</label>
-              <input type="date" id="validade" />
-            </div>
-            <div class="field-group">
-              <label for="vendedor">Consultor / vendedor</label>
-              <input type="text" id="vendedor"
-                     placeholder="Ex: Ana Paula" />
-            </div>
-          </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="cliente">Nome do cliente</label>
+          <input type="text" id="cliente" placeholder="Ex: Joao Silva" />
+        </div>
+        <div class="field-group">
+          <label for="dataOrcamento">Data do orcamento</label>
+          <input type="date" id="dataOrcamento" />
         </div>
       </div>
 
-      <!-- Destino -->
-      <div class="form-card">
-        <div class="form-card-header"><h3>Destino e Periodo</h3></div>
-        <div class="form-card-body">
-          <div class="field-row">
-            <div class="field-group field-wide">
-              <label for="destino">Destino</label>
-              <input type="text" id="destino"
-                     placeholder="Ex: Fernando de Noronha - PE" />
-            </div>
-            <div class="field-group">
-              <label for="periodo">Periodo da viagem</label>
-              <input type="text" id="periodo"
-                     placeholder="Ex: 10 a 15 de Julho/2025" />
-            </div>
-          </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="destino">Destino</label>
+          <input type="text" id="destino"
+                 placeholder="Ex: Fernando de Noronha - PE" />
+        </div>
+        <div class="field-group">
+          <label for="periodo">Periodo da viagem</label>
+          <input type="text" id="periodo"
+                 placeholder="Ex: 10 a 15 de Julho/2025" />
         </div>
       </div>
 
-      <!-- Roteiro -->
-      <div class="form-card">
-        <div class="form-card-header"><h3>Roteiro / Programacao Dia a Dia</h3></div>
-        <div class="form-card-body">
-          <div class="field-group">
-            <label for="roteiro">Descreva o roteiro completo</label>
-            <textarea id="roteiro" rows="10"
-              placeholder="DIA 01 - Embarque as 06h00..."></textarea>
-          </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="saida">Saida de</label>
+          <input type="text" id="saida"
+                 placeholder="Ex: Pocos de Caldas / MG" />
+        </div>
+        <div class="field-group">
+          <label for="numeroPessoas">N de pessoas</label>
+          <input type="number" id="numeroPessoas"
+                 placeholder="Ex: 20" min="1"
+                 oninput="calcularTotal()" />
         </div>
       </div>
 
-      <!-- Valores -->
-      <div class="form-card">
-        <div class="form-card-header"><h3>Valores e Pagamento</h3></div>
-        <div class="form-card-body">
-          <div class="field-row">
-            <div class="field-group">
-              <label for="precoPorPessoa">Valor por pessoa (R$)</label>
-              <input type="text" id="precoPorPessoa"
-                     placeholder="Ex: 2500,00"
-                     oninput="calcularTotal()" />
-            </div>
-            <div class="field-group">
-              <label for="ocupacao">Base de ocupacao</label>
-              <input type="text" id="ocupacao"
-                     placeholder="Ex: Duplo / Triplo" />
-            </div>
-          </div>
+      <div class="field-group">
+        <label for="roteiro">Roteiro / descricao (cole aqui o roteiro completo)</label>
+        <textarea id="roteiro" rows="10"
+          placeholder="DIA 01 - Embarque as 06h00..."></textarea>
+      </div>
 
-          <!-- Caixa total calculado -->
-          <div class="total-box">
-            <div class="total-box-label">Total do grupo</div>
-            <div class="total-box-valor" id="totalCalculado">-</div>
-            <div class="total-box-detalhe" id="totalDetalhe"></div>
-          </div>
-
-          <div class="field-group">
-            <label for="pagamento">Forma de pagamento detalhada</label>
-            <textarea id="pagamento" rows="3"
-              placeholder="Ex: Entrada de R$ 500,00 + 5x de R$ 400,00..."></textarea>
-          </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="precoPorPessoa">Valor por pessoa</label>
+          <input type="text" id="precoPorPessoa"
+                 placeholder="Ex: 2500,00"
+                 oninput="calcularTotal()" />
+        </div>
+        <div class="field-group">
+          <label for="ocupacao">Base de ocupacao</label>
+          <input type="text" id="ocupacao"
+                 placeholder="Ex: Duplo / Triplo" />
         </div>
       </div>
 
-      <!-- Inclui / Nao inclui -->
-      <div class="form-card">
-        <div class="form-card-header"><h3>O Pacote Inclui / Nao Inclui</h3></div>
-        <div class="form-card-body">
-          <div class="field-row">
-            <div class="field-group">
-              <label for="inclui">O pacote inclui</label>
-              <textarea id="inclui" rows="4"
-                placeholder="Ex: Transporte, hospedagem com cafe da manha..."></textarea>
-            </div>
-            <div class="field-group">
-              <label for="naoInclui">Nao inclui</label>
-              <textarea id="naoInclui" rows="4"
-                placeholder="Ex: Passagens aereas, seguro viagem..."></textarea>
-            </div>
-          </div>
-        </div>
+      <!-- Caixa total calculado -->
+      <div style="background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
+                  border:2px solid #2c8c3a;border-radius:8px;
+                  padding:10px 16px;margin:10px 0;
+                  display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <span style="font-size:0.78rem;font-weight:700;color:#1e4a7d;
+                     text-transform:uppercase;letter-spacing:0.05em;">
+          Total do grupo
+        </span>
+        <span id="totalCalculado"
+              style="font-size:1.3rem;font-weight:800;color:#2c8c3a;">-</span>
+        <span id="totalDetalhe"
+              style="font-size:0.8rem;color:#666;margin-left:auto;"></span>
       </div>
 
-      <!-- Observacoes -->
-      <div class="form-card">
-        <div class="form-card-header"><h3>Observacoes / Condicoes Gerais</h3></div>
-        <div class="form-card-body">
-          <div class="field-group">
-            <label for="observacoes">Condicoes gerais e informacoes importantes</label>
-            <textarea id="observacoes" rows="4"
-              placeholder="Ex: Precos sujeitos a alteracao..."></textarea>
-          </div>
-        </div>
+      <div class="field-group">
+        <label for="pagamento">Forma de pagamento detalhada</label>
+        <textarea id="pagamento" rows="3"
+          placeholder="Ex: Entrada de R$ 500,00 + 5x de R$ 400,00..."></textarea>
       </div>
 
-      <!-- Botoes -->
+      <div class="field-group">
+        <label for="observacoes">Observacoes / condicoes gerais</label>
+        <textarea id="observacoes" rows="4"
+          placeholder="Inclui: transporte, hospedagem...&#10;Nao inclui: passagens aereas..."></textarea>
+      </div>
+
       <div class="actions">
-        <button class="btn btn-primary"  id="btnSalvar">Salvar Orcamento</button>
-        <button class="btn btn-success"  id="btnGerar">Gerar PDF</button>
-        <button class="btn btn-duplicar" id="btnDuplicar">Duplicar</button>
-        <button class="btn btn-outline"  id="btnLimpar">Limpar</button>
+        <button class="btn primary" id="btnSalvar">Salvar Orcamento</button>
+        <button class="btn primary" id="btnGerar"
+                style="background:#1e4a7d;">Gerar PDF</button>
+        <button class="btn secondary" id="btnLimpar">Limpar formulario</button>
       </div>
 
     </section>
 
-    <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="sidebar-header">
-        <h2>Orcamentos Salvos</h2>
-        <span class="sidebar-count" id="sidebarCount">0</span>
-      </div>
-      <p class="sidebar-hint">Clique para carregar &middot; use o icone para excluir</p>
+      <h2>Orcamentos Salvos
+        <span id="sidebarCount"
+              style="background:#2c8c3a;color:#fff;font-size:0.75rem;
+                     border-radius:999px;padding:2px 8px;margin-left:6px;">
+          0
+        </span>
+      </h2>
+      <p class="sidebar-hint">
+        Clique para carregar &middot; use o icone para excluir
+      </p>
       <ul class="orcamentos-list" id="listaOrcamentos"></ul>
     </aside>
+
   </div>
 
   <footer class="app-footer">
-    <div class="footer-left">
-      <strong>Oficina de Turismo</strong>
-      <span>Tel / WhatsApp: (35) 98862-2943 &bull; (35) 98844-5517</span>
-      <span>Instagram: @oficinadeturismo &bull; www.oficinatur.com.br</span>
+    <div>
+      <strong>Oficina de Turismo</strong><br />
+      Tel / WhatsApp: (35) 98862-2943 &bull; (35) 98844-5517<br />
+      Instagram: @oficinadeturismo &bull; www.oficinatur.com.br
     </div>
     <div class="footer-right">
       <img src="selo30anos.png" alt="30 anos"
-           class="selo-footer" onerror="this.style.display='none'" />
+           style="height:48px;width:auto;opacity:0.9;"
+           onerror="this.style.display='none'" />
       <span class="experience-text">30 anos de experiencia</span>
     </div>
   </footer>
 
 </div>
+
 <script src="script.js"></script>
 </body>
 </html>
