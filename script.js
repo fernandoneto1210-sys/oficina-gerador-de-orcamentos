@@ -1,6 +1,3 @@
-// script.js - Oficina de Turismo
-// REGRA: jsPDF NUNCA no topo — sempre dentro de _buildPDF()
-
 var STORAGE_KEY = 'oficina_orcamentos_v3';
 var COUNTER_KEY = 'oficina_contador_v3';
 var estadoAtual = { id: null, numero: null };
@@ -17,7 +14,6 @@ window.addEventListener('load', function () {
   carregarLista();
 });
 
-// ── NUMERO ────────────────────────────────────────────────
 function proximoNumero() {
   var n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
   localStorage.setItem(COUNTER_KEY, String(n));
@@ -28,23 +24,21 @@ function fmt(n) {
   return String(n).padStart(3, '0');
 }
 
-// ── BADGE ─────────────────────────────────────────────────
 function mostrarBadge(numero) {
   estadoAtual.numero = numero;
   var el = document.getElementById('numeroBadge');
   var vl = document.getElementById('numeroAtualValor');
   if (!el || !vl) return;
-  vl.textContent   = 'N ' + fmt(numero);
+  vl.textContent  = 'N ' + fmt(numero);
   el.style.display = 'flex';
 }
 
 function ocultarBadge() {
-  estadoAtual = { id: null, numero: null };
   var el = document.getElementById('numeroBadge');
   if (el) el.style.display = 'none';
+  estadoAtual = { id: null, numero: null };
 }
 
-// ── FORM ──────────────────────────────────────────────────
 function gv(id) {
   var el = document.getElementById(id);
   return el ? el.value.trim() : '';
@@ -57,8 +51,8 @@ function sv(id, val) {
 
 function lerFormulario() {
   return {
-    id:             estadoAtual.id || Date.now(),
-    numero:         estadoAtual.numero,
+    id:             estadoAtual.id || null,
+    numero:         estadoAtual.numero || null,
     cliente:        gv('cliente'),
     destino:        gv('destino'),
     periodo:        gv('periodo'),
@@ -88,25 +82,27 @@ function preencherFormulario(d) {
 }
 
 function limparFormulario() {
-  preencherFormulario({});
+  estadoAtual = { id: null, numero: null };
   ocultarBadge();
-  removerAtivo();
-  sv('dataOrcamento', new Date().toISOString().split('T')[0]);
-  var c = document.getElementById('cliente');
-  if (c) c.focus();
+  var ids = ['cliente','destino','periodo','saida','dataOrcamento',
+             'numeroPessoas','roteiro','precoPorPessoa','ocupacao',
+             'pagamento','observacoes'];
+  ids.forEach(function(id) { sv(id, ''); });
+  var elData = document.getElementById('dataOrcamento');
+  if (elData) elData.value = new Date().toISOString().split('T')[0];
+  carregarLista();
 }
 
-// ── STORAGE ───────────────────────────────────────────────
 function obterLista() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch (e) { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch (e) { return []; }
 }
 
 function gravarLista(lista) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 }
 
-// ── SALVAR ────────────────────────────────────────────────
 function salvarOrcamento() {
   var d = lerFormulario();
   if (!d.destino || !d.roteiro) {
@@ -136,35 +132,25 @@ function salvarOrcamento() {
   mostrarBadge(d.numero);
   gravarLista(lista);
   carregarLista();
-  destacarAtivo(d.id);
 }
 
-// ── EXCLUIR ───────────────────────────────────────────────
 function excluirOrcamento(id) {
-  var nova = obterLista().filter(function (o) { return o.id !== id; });
+  var nova = obterLista().filter(function (o) {
+    return o.id !== id;
+  });
   gravarLista(nova);
-  if (id === estadoAtual.id) limparFormulario();
-  else carregarLista();
-}
-
-// ── SIDEBAR ───────────────────────────────────────────────
-function removerAtivo() {
-  document.querySelectorAll('.orcamento-item.ativo').forEach(function (el) {
-    el.classList.remove('ativo');
-  });
-}
-
-function destacarAtivo(id) {
-  carregarLista();
-  document.querySelectorAll('.orcamento-item').forEach(function (el) {
-    if (parseInt(el.dataset.id) === id) el.classList.add('ativo');
-  });
+  if (id === estadoAtual.id) {
+    limparFormulario();
+  } else {
+    carregarLista();
+  }
 }
 
 function carregarLista() {
   var lista = obterLista();
   var ul    = document.getElementById('listaOrcamentos');
   var cnt   = document.getElementById('sidebarCount');
+
   ul.innerHTML = '';
   if (cnt) cnt.textContent = lista.length;
 
@@ -176,9 +162,11 @@ function carregarLista() {
     return;
   }
 
-  lista.slice().sort(function (a, b) { return b.id - a.id; })
-  .forEach(function (orc) {
-    var li      = document.createElement('li');
+  lista.slice().sort(function (a, b) {
+    return b.id - a.id;
+  }).forEach(function (orc) {
+
+    var li        = document.createElement('li');
     li.className  = 'orcamento-item';
     li.dataset.id = orc.id;
     if (orc.id === estadoAtual.id) li.classList.add('ativo');
@@ -189,8 +177,7 @@ function carregarLista() {
       'justify-content:space-between;gap:6px;';
 
     var wrap = document.createElement('div');
-    wrap.style.cssText =
-      'display:flex;align-items:flex-start;gap:4px;flex:1;';
+    wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;';
 
     if (orc.numero) {
       var num = document.createElement('span');
@@ -202,60 +189,61 @@ function carregarLista() {
     }
 
     var txt = document.createElement('div');
-    txt.className   = 'orcamento-title';
-    txt.textContent = (orc.cliente || 'Sem nome') +
-                      ' - ' + (orc.destino || 'Sem destino');
+    txt.style.cssText  = 'font-size:0.87rem;font-weight:600;color:#222;line-height:1.35;flex:1;';
+    txt.textContent    = (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
     wrap.appendChild(txt);
 
     var del = document.createElement('button');
-    del.textContent   = '\uD83D\uDDD1';
+    del.textContent   = 'X';
     del.title         = 'Excluir';
     del.style.cssText =
-      'border:none;background:transparent;cursor:pointer;' +
-      'font-size:14px;padding:0 2px;opacity:0.5;flex-shrink:0;';
+      'border:none;background:#fee2e2;color:#c0392b;cursor:pointer;' +
+      'font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;' +
+      'opacity:0.7;flex-shrink:0;';
     del.onmouseover = function () { this.style.opacity = '1'; };
-    del.onmouseout  = function () { this.style.opacity = '0.5'; };
+    del.onmouseout  = function () { this.style.opacity = '0.7'; };
 
     (function (oid, onum) {
       del.onclick = function (e) {
         e.stopPropagation();
-        if (confirm('Excluir orcamento N ' + fmt(onum || 0) + '?'))
+        if (confirm('Excluir orcamento N ' + fmt(onum || 0) + '?')) {
           excluirOrcamento(oid);
+        }
+      };
+      li.onclick = function () {
+        var lista2 = obterLista();
+        var found  = null;
+        for (var i = 0; i < lista2.length; i++) {
+          if (lista2[i].id === oid) { found = lista2[i]; break; }
+        }
+        if (!found) return;
+        estadoAtual.id     = found.id;
+        estadoAtual.numero = found.numero;
+        preencherFormulario(found);
+        mostrarBadge(found.numero);
+        carregarLista();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       };
     })(orc.id, orc.numero);
 
-    topo.appendChild(wrap);
-    topo.appendChild(del);
-
     var meta = document.createElement('div');
-    meta.className = 'orcamento-meta';
+    meta.style.cssText = 'font-size:0.74rem;color:#888;margin-top:3px;';
     var partes = [];
-    if (orc.dataOrcamento)
+    if (orc.dataOrcamento) {
       partes.push(orc.dataOrcamento.split('-').reverse().join('/'));
+    }
     if (orc.periodo)       partes.push(orc.periodo);
     if (orc.numeroPessoas) partes.push(orc.numeroPessoas + ' pax');
     meta.textContent = partes.join(' | ') || '-';
 
+    topo.appendChild(wrap);
+    topo.appendChild(del);
     li.appendChild(topo);
     li.appendChild(meta);
-
-    (function (o, item) {
-      item.onclick = function () {
-        preencherFormulario(o);
-        estadoAtual.id     = o.id;
-        estadoAtual.numero = o.numero;
-        if (o.numero) mostrarBadge(o.numero);
-        removerAtivo();
-        item.classList.add('ativo');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      };
-    })(orc, li);
-
     ul.appendChild(li);
   });
 }
 
-// ── IMAGEM BASE64 ─────────────────────────────────────────
 function imgBase64(src) {
   return new Promise(function (resolve) {
     var img = new Image();
@@ -270,11 +258,10 @@ function imgBase64(src) {
       } catch (e) { resolve(null); }
     };
     img.onerror = function () { resolve(null); };
-    img.src = src + '?v=' + Date.now();
+    img.src = src + '?cb=' + Date.now();
   });
 }
 
-// ── GERAR PDF ─────────────────────────────────────────────
 function gerarPDF() {
   var d = lerFormulario();
   if (!d.destino || !d.roteiro || !d.precoPorPessoa) {
@@ -291,7 +278,6 @@ function gerarPDF() {
 
 function _buildPDF(d, logoB, seloB) {
 
-  // jsPDF SEMPRE AQUI DENTRO - NUNCA no topo do arquivo
   var jsPDF = window.jspdf.jsPDF;
   var doc   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
@@ -381,7 +367,6 @@ function _buildPDF(d, logoB, seloB) {
              PW - MR, ry + 12, { align: 'right' });
   }
 
-  // TITULO SECAO — ZERO EMOJI, texto ASCII puro
   function sec(txt) {
     chk(14);
     doc.setFillColor(30, 74, 125);
@@ -449,11 +434,13 @@ function _buildPDF(d, logoB, seloB) {
   doc.setFontSize(9.5);
   var c1 = ML, c2 = ML + TW / 2 + 4;
   var dados = [
-    d.cliente       ? ['Cliente:',      d.cliente]                              : null,
-    d.saida         ? ['Saida de:',     d.saida]                                : null,
-    d.periodo       ? ['Periodo:',      d.periodo]                              : null,
-    d.dataOrcamento ? ['Data:',         d.dataOrcamento.split('-').reverse().join('/')] : null,
-    d.numeroPessoas ? ['Passageiros:',  d.numeroPessoas + ' pessoa(s)']         : null
+    d.cliente       ? ['Cliente:',      d.cliente]      : null,
+    d.saida         ? ['Saida de:',     d.saida]        : null,
+    d.periodo       ? ['Periodo:',      d.periodo]      : null,
+    d.dataOrcamento ? ['Data:',
+      d.dataOrcamento.split('-').reverse().join('/')]    : null,
+    d.numeroPessoas ? ['Passageiros:',
+      d.numeroPessoas + ' pessoa(s)']                   : null
   ].filter(Boolean);
 
   for (var i = 0; i < dados.length; i++) {
@@ -469,7 +456,6 @@ function _buildPDF(d, logoB, seloB) {
   }
   y += 10;
 
-  // TITULOS 100% ASCII - ZERO EMOJI
   sec('ROTEIRO / PROGRAMACAO DA VIAGEM');
   bloco(d.roteiro, 5);
 
@@ -494,8 +480,16 @@ function _buildPDF(d, logoB, seloB) {
     rodape(p, tot);
   }
 
-  var nd  = (d.destino || 'Oficina').replace(/[^\wÀ-ú]+/g, '_').slice(0, 25);
-  var nc  = (d.cliente || '').replace(/[^\wÀ-ú]+/g, '_').slice(0, 20);
+  // CORRECAO DEFINITIVA — sem regex com acentos
+  function limparNome(str) {
+    return str
+      .replace(/[^a-zA-Z0-9_\-\s]/g, '')
+      .replace(/\s+/g, '_')
+      .slice(0, 25);
+  }
+
+  var nd  = limparNome(d.destino || 'Oficina');
+  var nc  = limparNome(d.cliente || '').slice(0, 20);
   var num = d.numero ? '_' + fmt(d.numero) : '';
   doc.save('Orcamento' + num + '_' + nd + (nc ? '_' + nc : '') + '.pdf');
 }
