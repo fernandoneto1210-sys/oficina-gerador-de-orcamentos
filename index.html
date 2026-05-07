@@ -73,8 +73,7 @@
         <div class="field-group">
           <label for="numeroPessoas">N de pessoas</label>
           <input type="number" id="numeroPessoas"
-                 placeholder="Ex: 20" min="1"
-                 oninput="calcularTotal()" />
+                 placeholder="Ex: 20" min="1" />
         </div>
       </div>
 
@@ -88,28 +87,13 @@
         <div class="field-group">
           <label for="precoPorPessoa">Valor por pessoa</label>
           <input type="text" id="precoPorPessoa"
-                 placeholder="Ex: 2500,00"
-                 oninput="calcularTotal()" />
+                 placeholder="Ex: R$ 2.500,00" />
         </div>
         <div class="field-group">
           <label for="ocupacao">Base de ocupacao</label>
           <input type="text" id="ocupacao"
                  placeholder="Ex: Duplo / Triplo" />
         </div>
-      </div>
-
-      <div style="background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
-                  border:2px solid #2c8c3a;border-radius:8px;
-                  padding:10px 16px;margin:10px 0;
-                  display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-        <span style="font-size:0.78rem;font-weight:700;color:#1e4a7d;
-                     text-transform:uppercase;letter-spacing:0.05em;">
-          Total do grupo
-        </span>
-        <span id="totalCalculado"
-              style="font-size:1.3rem;font-weight:800;color:#2c8c3a;">-</span>
-        <span id="totalDetalhe"
-              style="font-size:0.8rem;color:#666;margin-left:auto;"></span>
       </div>
 
       <div class="field-group">
