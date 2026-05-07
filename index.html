@@ -20,6 +20,10 @@
         <p>Oficina de Turismo &bull; 30 anos transformando sonhos em viagem</p>
       </div>
     </div>
+    <div class="header-right">
+      <img src="selo30anos.png" alt="30 Anos"
+           class="selo-header" onerror="this.style.display='none'" />
+    </div>
   </header>
 
   <div class="main-content">
@@ -48,6 +52,17 @@
         <div class="field-group">
           <label for="dataOrcamento">Data do orcamento</label>
           <input type="date" id="dataOrcamento" />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label for="validade">Validade do orcamento</label>
+          <input type="date" id="validade" />
+        </div>
+        <div class="field-group">
+          <label for="vendedor">Consultor / vendedor</label>
+          <input type="text" id="vendedor" placeholder="Ex: Ana Paula" />
         </div>
       </div>
 
@@ -87,7 +102,7 @@
         <div class="field-group">
           <label for="precoPorPessoa">Valor por pessoa</label>
           <input type="text" id="precoPorPessoa"
-                 placeholder="Ex: R$ 2.500,00" />
+                 placeholder="Ex: 2500,00" />
         </div>
         <div class="field-group">
           <label for="ocupacao">Base de ocupacao</label>
@@ -96,22 +111,50 @@
         </div>
       </div>
 
+      <div style="background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
+                  border:2px solid #2c8c3a;border-radius:8px;
+                  padding:10px 16px;margin:10px 0;
+                  display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <span style="font-size:0.78rem;font-weight:700;color:#1e4a7d;
+                     text-transform:uppercase;letter-spacing:0.05em;">
+          Total do grupo
+        </span>
+        <span id="totalCalculado"
+              style="font-size:1.3rem;font-weight:800;color:#2c8c3a;">-</span>
+        <span id="totalDetalhe"
+              style="font-size:0.8rem;color:#666;margin-left:auto;"></span>
+      </div>
+
       <div class="field-group">
         <label for="pagamento">Forma de pagamento detalhada</label>
         <textarea id="pagamento" rows="3"
           placeholder="Ex: Entrada de R$ 500,00 + 5x de R$ 400,00..."></textarea>
       </div>
 
+      <div class="field-row">
+        <div class="field-group">
+          <label for="inclui">O pacote inclui</label>
+          <textarea id="inclui" rows="4"
+            placeholder="Ex: Transporte, hospedagem com cafe da manha..."></textarea>
+        </div>
+        <div class="field-group">
+          <label for="naoInclui">Nao inclui</label>
+          <textarea id="naoInclui" rows="4"
+            placeholder="Ex: Passagens aereas, seguro viagem..."></textarea>
+        </div>
+      </div>
+
       <div class="field-group">
         <label for="observacoes">Observacoes / condicoes gerais</label>
         <textarea id="observacoes" rows="4"
-          placeholder="Inclui: transporte, hospedagem..."></textarea>
+          placeholder="Ex: Precos sujeitos a alteracao sem aviso previo..."></textarea>
       </div>
 
       <div class="actions">
-        <button class="btn primary" id="btnSalvar">Salvar Orcamento</button>
-        <button class="btn primary" id="btnGerar"
+        <button class="btn primary"   id="btnSalvar">Salvar Orcamento</button>
+        <button class="btn primary"   id="btnGerar"
                 style="background:#1e4a7d;">Gerar PDF</button>
+        <button class="btn secondary" id="btnDuplicar">Duplicar</button>
         <button class="btn secondary" id="btnLimpar">Limpar</button>
       </div>
 
@@ -128,6 +171,11 @@
       <p class="sidebar-hint">
         Clique para carregar &middot; use o icone para excluir
       </p>
+      <input type="text" id="campoBusca"
+             placeholder="Buscar orcamento..."
+             oninput="filtrarLista()"
+             style="width:100%;padding:7px 10px;border:1.5px solid #dde3ea;
+                    border-radius:6px;font-size:0.88rem;margin-bottom:8px;" />
       <ul class="orcamentos-list" id="listaOrcamentos"></ul>
     </aside>
 
