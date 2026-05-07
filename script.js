@@ -20,6 +20,8 @@ window.addEventListener('load', function () {
   carregarLista();
 });
 
+// ── UTILITARIOS ───────────────────────────────────────────
+
 function proximoNumero() {
   var n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
   localStorage.setItem(COUNTER_KEY, String(n));
@@ -30,12 +32,6 @@ function fmt(n) {
   return String(n).padStart(3, '0');
 }
 
-function adicionarDias(dataStr, dias) {
-  var d = new Date(dataStr);
-  d.setDate(d.getDate() + dias);
-  return d.toISOString().split('T')[0];
-}
-
 function brFmt(v) {
   return 'R$ ' + v.toFixed(2)
     .replace('.', ',')
@@ -43,6 +39,20 @@ function brFmt(v) {
 \B
 (?=(\d{3})+(?!\d))/g, '.');
 }
+
+// CORRECAO DEFINITIVA — sem nenhuma regex com acento
+function limparNome(str) {
+  var resultado = '';
+  var permitidos = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_- ';
+  for (var i = 0; i < str.length; i++) {
+    if (permitidos.indexOf(str[i]) >= 0) {
+      resultado += str[i];
+    }
+  }
+  return resultado.replace(/ /g, '_').slice(0, 25);
+}
+
+// ── BADGE ─────────────────────────────────────────────────
 
 function mostrarBadge(numero) {
   estadoAtual.numero = numero;
@@ -58,6 +68,8 @@ function ocultarBadge() {
   if (el) el.style.display = 'none';
   estadoAtual = { id: null, numero: null };
 }
+
+// ── CALCULADORA ───────────────────────────────────────────
 
 function calcularTotal() {
   var npEl  = document.getElementById('numeroPessoas');
@@ -79,6 +91,8 @@ function calcularTotal() {
   totEl.textContent = brFmt(np * pp);
   if (detEl) detEl.textContent = np + ' pessoa(s) x ' + brFmt(pp);
 }
+
+// ── FORMULARIO ────────────────────────────────────────────
 
 function gv(id) {
   var el = document.getElementById(id);
@@ -146,6 +160,8 @@ function limparFormulario() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── STORAGE ───────────────────────────────────────────────
+
 function obterLista() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
   catch (e) { return []; }
@@ -154,6 +170,8 @@ function obterLista() {
 function gravarLista(lista) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 }
+
+// ── SALVAR ────────────────────────────────────────────────
 
 function salvarOrcamento() {
   var d = lerFormulario();
@@ -183,6 +201,8 @@ function salvarOrcamento() {
   carregarLista();
 }
 
+// ── DUPLICAR ──────────────────────────────────────────────
+
 function duplicarOrcamento() {
   var d = lerFormulario();
   if (!d.destino) {
@@ -195,6 +215,8 @@ function duplicarOrcamento() {
   alert('Orcamento duplicado! Edite e salve como novo.');
 }
 
+// ── EXCLUIR ───────────────────────────────────────────────
+
 function excluirOrcamento(id) {
   var nova = obterLista().filter(function (o) { return o.id !== id; });
   gravarLista(nova);
@@ -205,12 +227,17 @@ function excluirOrcamento(id) {
   }
 }
 
+// ── BUSCA ─────────────────────────────────────────────────
+
 function filtrarLista() {
-  var termo = (document.getElementById('campoBusca').value || '').toLowerCase();
-  document.querySelectorAll('.orcamento-item').forEach(function (el) {
-    el.style.display = el.textContent.toLowerCase().indexOf(termo) >= 0 ? '' : 'none';
+  var el    = document.getElementById('campoBusca');
+  var termo = el ? el.value.toLowerCase() : '';
+  document.querySelectorAll('.orcamento-item').forEach(function (li) {
+    li.style.display = li.textContent.toLowerCase().indexOf(termo) >= 0 ? '' : 'none';
   });
 }
+
+// ── SIDEBAR ───────────────────────────────────────────────
 
 function carregarLista() {
   var lista = obterLista();
@@ -229,28 +256,27 @@ function carregarLista() {
 
   lista.slice().sort(function (a, b) { return b.id - a.id; })
   .forEach(function (orc) {
+
     var li        = document.createElement('li');
     li.className  = 'orcamento-item';
-    li.dataset.id = orc.id;
+    li.dataset.id = String(orc.id);
     if (orc.id === estadoAtual.id) li.classList.add('ativo');
 
+    // alerta de validade
     if (orc.validade) {
       var hoje = new Date().toISOString().split('T')[0];
       if (orc.validade < hoje) {
-        li.style.borderColor = '#c0392b';
-        li.style.background  = '#fff5f5';
-      } else if (orc.validade <= adicionarDias(hoje, 3)) {
-        li.style.borderColor = '#e67e22';
-        li.style.background  = '#fffbf0';
+        li.style.borderLeft = '4px solid #c0392b';
+      } else {
+        li.style.borderLeft = '4px solid #2c8c3a';
       }
     }
 
     var topo = document.createElement('div');
-    topo.style.cssText =
-      'display:flex;align-items:flex-start;justify-content:space-between;gap:6px;';
+    topo.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:6px;';
 
     var wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;';
+    wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;min-width:0;';
 
     if (orc.numero) {
       var num = document.createElement('span');
@@ -262,18 +288,19 @@ function carregarLista() {
     }
 
     var txt = document.createElement('div');
-    txt.style.cssText = 'font-size:0.87rem;font-weight:600;color:#222;line-height:1.35;flex:1;';
+    txt.style.cssText = 'font-size:0.87rem;font-weight:600;color:#222;line-height:1.35;';
     txt.textContent   = (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
     wrap.appendChild(txt);
 
     var del = document.createElement('button');
-    del.textContent   = '\uD83D\uDDD1';
+    del.textContent   = 'X';
     del.title         = 'Excluir';
     del.style.cssText =
-      'border:none;background:transparent;cursor:pointer;' +
-      'font-size:14px;padding:0 4px;opacity:0.5;flex-shrink:0;';
+      'border:none;background:#fee;color:#c0392b;cursor:pointer;' +
+      'font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;' +
+      'flex-shrink:0;opacity:0.7;';
     del.onmouseover = function () { this.style.opacity = '1'; };
-    del.onmouseout  = function () { this.style.opacity = '0.5'; };
+    del.onmouseout  = function () { this.style.opacity = '0.7'; };
 
     (function (oid, onum) {
       del.onclick = function (e) {
@@ -290,8 +317,7 @@ function carregarLista() {
     var meta = document.createElement('div');
     meta.style.cssText = 'font-size:0.74rem;color:#888;margin-top:3px;';
     var partes = [];
-    if (orc.dataOrcamento)
-      partes.push(orc.dataOrcamento.split('-').reverse().join('/'));
+    if (orc.dataOrcamento) partes.push(orc.dataOrcamento.split('-').reverse().join('/'));
     if (orc.periodo)       partes.push(orc.periodo);
     if (orc.numeroPessoas) partes.push(orc.numeroPessoas + ' pax');
     meta.textContent = partes.join(' | ') || '-';
@@ -299,21 +325,25 @@ function carregarLista() {
     li.appendChild(topo);
     li.appendChild(meta);
 
-    li.onclick = function () {
-      preencherFormulario(orc);
-      estadoAtual.id     = orc.id;
-      estadoAtual.numero = orc.numero;
-      if (orc.numero) mostrarBadge(orc.numero);
-      document.querySelectorAll('.orcamento-item').forEach(function (el) {
-        el.classList.remove('ativo');
-      });
-      li.classList.add('ativo');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+    (function (dados) {
+      li.onclick = function () {
+        preencherFormulario(dados);
+        estadoAtual.id     = dados.id;
+        estadoAtual.numero = dados.numero;
+        if (dados.numero) mostrarBadge(dados.numero);
+        document.querySelectorAll('.orcamento-item').forEach(function (el) {
+          el.classList.remove('ativo');
+        });
+        li.classList.add('ativo');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+    })(orc);
 
     ul.appendChild(li);
   });
 }
+
+// ── IMAGEM BASE64 ─────────────────────────────────────────
 
 function imgBase64(src) {
   return new Promise(function (resolve) {
@@ -321,7 +351,7 @@ function imgBase64(src) {
     img.crossOrigin = 'anonymous';
     img.onload = function () {
       try {
-        var c    = document.createElement('canvas');
+        var c = document.createElement('canvas');
         c.width  = img.naturalWidth  || 300;
         c.height = img.naturalHeight || 300;
         c.getContext('2d').drawImage(img, 0, 0);
@@ -333,10 +363,12 @@ function imgBase64(src) {
   });
 }
 
+// ── GERAR PDF ─────────────────────────────────────────────
+
 function gerarPDF() {
   var d = lerFormulario();
   if (!d.destino || !d.roteiro) {
-    alert('Preencha pelo menos Destino e Roteiro.');
+    alert('Preencha pelo menos Destino e Roteiro para gerar o PDF.');
     return;
   }
   Promise.all([
@@ -348,10 +380,11 @@ function gerarPDF() {
 }
 
 function _buildPDF(d, logoB, seloB) {
+
   var jsPDF = window.jspdf.jsPDF;
   var doc   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-  var PW   = 210, PH  = 297, ML = 18, MR = 18;
+  var PW   = 210, PH = 297, ML = 18, MR = 18;
   var TW   = PW - ML - MR;
   var RBOT = PH - 28;
   var HEND = 42;
@@ -505,6 +538,7 @@ function _buildPDF(d, logoB, seloB) {
     y += 5;
   }
 
+  // CONSTROI O PDF
   cabecalho();
   rst();
 
@@ -594,13 +628,6 @@ function _buildPDF(d, logoB, seloB) {
   for (var p = 1; p <= tot; p++) {
     doc.setPage(p);
     rodape(p, tot);
-  }
-
-  function limparNome(str) {
-    return str
-      .replace(/[^a-zA-Z0-9_ -]/g, '')
-      .replace(/\s+/g, '_')
-      .slice(0, 25);
   }
 
   var nd  = limparNome(d.destino || 'Oficina');
