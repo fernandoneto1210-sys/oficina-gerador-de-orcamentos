@@ -20,22 +20,16 @@
         <p>Oficina de Turismo &bull; 30 anos transformando sonhos em viagem</p>
       </div>
     </div>
-    <div class="footer-right">
-      <img src="selo30anos.png" alt="30 Anos"
-           style="height:60px;width:auto;"
-           onerror="this.style.display='none'" />
-    </div>
   </header>
 
   <div class="main-content">
 
     <section class="form-section">
 
-      <div id="numeroBadge" style="display:none;
-           background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
-           border:2px solid #2c8c3a;border-radius:8px;
-           padding:8px 14px;margin-bottom:14px;
-           display:none;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div id="numeroBadge"
+           style="display:none;background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
+                  border:2px solid #2c8c3a;border-radius:8px;padding:8px 14px;
+                  margin-bottom:14px;align-items:center;gap:10px;flex-wrap:wrap;">
         <span style="color:#1e4a7d;font-weight:500;">Orcamento em edicao:</span>
         <strong id="numeroAtualValor" style="color:#2c8c3a;font-size:1.1rem;"></strong>
         <button id="btnNovo" class="btn secondary"
@@ -85,7 +79,7 @@
       </div>
 
       <div class="field-group">
-        <label for="roteiro">Roteiro / descricao (cole aqui o roteiro completo)</label>
+        <label for="roteiro">Roteiro / descricao completo</label>
         <textarea id="roteiro" rows="10"
           placeholder="DIA 01 - Embarque as 06h00..."></textarea>
       </div>
@@ -104,7 +98,6 @@
         </div>
       </div>
 
-      <!-- Caixa total calculado -->
       <div style="background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
                   border:2px solid #2c8c3a;border-radius:8px;
                   padding:10px 16px;margin:10px 0;
@@ -128,14 +121,14 @@
       <div class="field-group">
         <label for="observacoes">Observacoes / condicoes gerais</label>
         <textarea id="observacoes" rows="4"
-          placeholder="Inclui: transporte, hospedagem...&#10;Nao inclui: passagens aereas..."></textarea>
+          placeholder="Inclui: transporte, hospedagem..."></textarea>
       </div>
 
       <div class="actions">
         <button class="btn primary" id="btnSalvar">Salvar Orcamento</button>
         <button class="btn primary" id="btnGerar"
                 style="background:#1e4a7d;">Gerar PDF</button>
-        <button class="btn secondary" id="btnLimpar">Limpar formulario</button>
+        <button class="btn secondary" id="btnLimpar">Limpar</button>
       </div>
 
     </section>
@@ -158,8 +151,8 @@
 
   <footer class="app-footer">
     <div>
-      <strong>Oficina de Turismo</strong><br />
-      Tel / WhatsApp: (35) 98862-2943 &bull; (35) 98844-5517<br />
+      <strong>Oficina de Turismo</strong><br/>
+      Tel / WhatsApp: (35) 98862-2943 &bull; (35) 98844-5517<br/>
       Instagram: @oficinadeturismo &bull; www.oficinatur.com.br
     </div>
     <div class="footer-right">
