@@ -1,6 +1,9 @@
 var STORAGE_KEY = 'oficina_orcamentos_v3';
 var COUNTER_KEY = 'oficina_contador_v3';
 var estadoAtual = { id: null, numero: null };
+var voosIda     = [];
+var voosVolta   = [];
+var vooIdxCtrl  = 0;
 
 window.addEventListener('load', function () {
   document.getElementById('btnSalvar').onclick   = salvarOrcamento;
@@ -8,6 +11,12 @@ window.addEventListener('load', function () {
   document.getElementById('btnLimpar').onclick   = limparFormulario;
   document.getElementById('btnNovo').onclick     = limparFormulario;
   document.getElementById('btnDuplicar').onclick = duplicarOrcamento;
+  document.getElementById('btnAddVooIda').onclick = function () {
+    adicionarVoo('ida');
+  };
+  document.getElementById('btnAddVooVolta').onclick = function () {
+    adicionarVoo('volta');
+  };
 
   var elData = document.getElementById('dataOrcamento');
   if (elData) elData.value = new Date().toISOString().slice(0, 10);
@@ -19,8 +28,173 @@ window.addEventListener('load', function () {
     if (el) el.addEventListener('input', calcularTotal);
   }
 
+  adicionarVoo('ida');
+  adicionarVoo('volta');
   carregarLista();
 });
+
+// ── VOOS ──────────────────────────────────────────────────
+
+function adicionarVoo(tipo) {
+  vooIdxCtrl++;
+  var idx       = vooIdxCtrl;
+  var arr       = (tipo === 'ida') ? voosIda : voosVolta;
+  var container = document.getElementById(
+    tipo === 'ida' ? 'containerVoosIda' : 'containerVoosVolta'
+  );
+  var cor       = (tipo === 'ida') ? '#1e4a7d' : '#2c8c3a';
+  var num       = arr.length + 1;
+
+  var div = document.createElement('div');
+  div.id  = 'vooBloco_' + tipo + '_' + idx;
+  div.style.cssText =
+    'border:1.5px solid #dde3ea;border-radius:8px;' +
+    'padding:12px;margin-bottom:10px;position:relative;';
+
+  var cabec = document.createElement('div');
+  cabec.style.cssText =
+    'display:flex;justify-content:space-between;' +
+    'align-items:center;margin-bottom:10px;';
+
+  var tit = document.createElement('div');
+  tit.style.cssText =
+    'font-size:0.8rem;font-weight:700;color:' + cor + ';' +
+    'text-transform:uppercase;';
+  tit.textContent = (tipo === 'ida' ? 'Voo de Ida' : 'Voo de Volta') +
+                    ' ' + num;
+
+  var btnRem = document.createElement('button');
+  btnRem.type      = 'button';
+  btnRem.textContent = 'Remover';
+  btnRem.style.cssText =
+    'font-size:0.75rem;padding:3px 10px;border:1px solid #c0392b;' +
+    'background:#fff;color:#c0392b;border-radius:4px;cursor:pointer;';
+  (function (d, t, i) {
+    btnRem.onclick = function () { removerVoo(d, t, i); };
+  })(div, tipo, idx);
+
+  cabec.appendChild(tit);
+  cabec.appendChild(btnRem);
+  div.appendChild(cabec);
+
+  var campos = [
+    [
+      { id: 'cia',     label: 'Cia Aerea',          placeholder: 'Ex: LATAM / GOL / Azul' },
+      { id: 'numero',  label: 'N do Voo',            placeholder: 'Ex: LA3042' }
+    ],
+    [
+      { id: 'origem',  label: 'Origem',              placeholder: 'Ex: Campinas (VCP)' },
+      { id: 'destino', label: 'Destino',             placeholder: 'Ex: Recife (REC)' }
+    ],
+    [
+      { id: 'partida', label: 'Data / Hora Partida', placeholder: 'Ex: 10/07/2025 - 06h30' },
+      { id: 'chegada', label: 'Data / Hora Chegada', placeholder: 'Ex: 10/07/2025 - 08h45' }
+    ],
+    [
+      { id: 'obs',     label: 'Observacao',          placeholder: 'Ex: Conexao em GRU', full: true }
+    ]
+  ];
+
+  for (var r = 0; r < campos.length; r++) {
+    var row = document.createElement('div');
+    row.style.cssText =
+      'display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;';
+
+    for (var c = 0; c < campos[r].length; c++) {
+      var campo = campos[r][c];
+      var fg    = document.createElement('div');
+      fg.style.cssText = 'display:flex;flex-direction:column;' +
+        (campo.full ? 'flex:1;min-width:100%;' : 'flex:1;min-width:120px;');
+
+      var lbl = document.createElement('label');
+      lbl.style.cssText =
+        'font-size:0.8rem;font-weight:600;color:#444;margin-bottom:3px;';
+      var uid = 'voo_' + tipo + '_' + idx + '_' + campo.id;
+      lbl.setAttribute('for', uid);
+      lbl.textContent = campo.label;
+
+      var inp = document.createElement('input');
+      inp.type        = 'text';
+      inp.id          = uid;
+      inp.placeholder = campo.placeholder;
+      inp.style.cssText =
+        'padding:6px 8px;border:1.5px solid #dde3ea;' +
+        'border-radius:6px;font-size:0.85rem;';
+
+      fg.appendChild(lbl);
+      fg.appendChild(inp);
+      row.appendChild(fg);
+    }
+    div.appendChild(row);
+  }
+
+  container.appendChild(div);
+  arr.push({ el: div, idx: idx });
+}
+
+function removerVoo(div, tipo, idx) {
+  var arr = (tipo === 'ida') ? voosIda : voosVolta;
+  if (div.parentNode) div.parentNode.removeChild(div);
+  var nova = [];
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i].idx !== idx) nova.push(arr[i]);
+  }
+  if (tipo === 'ida') voosIda = nova;
+  else voosVolta = nova;
+}
+
+function lerVoos(tipo) {
+  var arr = (tipo === 'ida') ? voosIda : voosVolta;
+  var res = [];
+  for (var i = 0; i < arr.length; i++) {
+    var idx = arr[i].idx;
+    var obj = {
+      cia:     gvEl('voo_' + tipo + '_' + idx + '_cia'),
+      numero:  gvEl('voo_' + tipo + '_' + idx + '_numero'),
+      origem:  gvEl('voo_' + tipo + '_' + idx + '_origem'),
+      destino: gvEl('voo_' + tipo + '_' + idx + '_destino'),
+      partida: gvEl('voo_' + tipo + '_' + idx + '_partida'),
+      chegada: gvEl('voo_' + tipo + '_' + idx + '_chegada'),
+      obs:     gvEl('voo_' + tipo + '_' + idx + '_obs')
+    };
+    var tem = obj.cia || obj.numero || obj.origem ||
+              obj.destino || obj.partida || obj.chegada || obj.obs;
+    if (tem) res.push(obj);
+  }
+  return res;
+}
+
+function gvEl(id) {
+  var el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function preencherVoos(tipo, lista) {
+  var container = document.getElementById(
+    tipo === 'ida' ? 'containerVoosIda' : 'containerVoosVolta'
+  );
+  if (tipo === 'ida') voosIda = [];
+  else voosVolta = [];
+  container.innerHTML = '';
+
+  if (!lista || !lista.length) {
+    adicionarVoo(tipo);
+    return;
+  }
+  for (var i = 0; i < lista.length; i++) {
+    adicionarVoo(tipo);
+    var arr = (tipo === 'ida') ? voosIda : voosVolta;
+    var idx = arr[arr.length - 1].idx;
+    var v   = lista[i];
+    var cs  = ['cia','numero','origem','destino','partida','chegada','obs'];
+    for (var j = 0; j < cs.length; j++) {
+      var el = document.getElementById('voo_' + tipo + '_' + idx + '_' + cs[j]);
+      if (el && v[cs[j]]) el.value = v[cs[j]];
+    }
+  }
+}
+
+// ── UTILITARIOS ───────────────────────────────────────────
 
 function proximoNumero() {
   var n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
@@ -51,12 +225,11 @@ function brFmt(v) {
 function toFloat(str) {
   if (!str) return 0;
   var r = '';
-  var temVirgula = false;
+  var temSep = false;
   for (var i = 0; i < str.length; i++) {
     var c = str[i];
     if (c >= '0' && c <= '9') r += c;
-    if (c === ',' && !temVirgula) { r += '.'; temVirgula = true; }
-    if (c === '.' && !temVirgula) { r += '.'; temVirgula = true; }
+    if ((c === ',' || c === '.') && !temSep) { r += '.'; temSep = true; }
   }
   var v = parseFloat(r);
   return isNaN(v) ? 0 : v;
@@ -93,6 +266,8 @@ function ocultarBadge() {
   estadoAtual = { id: null, numero: null };
 }
 
+// ── CALCULADORA ───────────────────────────────────────────
+
 function calcularTotal() {
   var np       = parseInt(gv('numeroPessoas'), 10);
   var pp       = toFloat(gv('precoPorPessoa'));
@@ -107,11 +282,11 @@ function calcularTotal() {
   var resumoEl = document.getElementById('resumoPagamento');
 
   if (!np || np <= 0 || pp <= 0) {
-    if (totPP)    totPP.textContent  = '-';
-    if (totEl)    totEl.textContent  = '-';
-    if (detEl)    detEl.textContent  = '';
+    if (totPP)    totPP.textContent = '-';
+    if (totEl)    totEl.textContent = '-';
+    if (detEl)    detEl.textContent = '';
     if (resumoEl) resumoEl.textContent =
-      'Preencha os campos acima para calcular o parcelamento.';
+      'Preencha os campos acima para calcular.';
     return;
   }
 
@@ -120,27 +295,24 @@ function calcularTotal() {
 
   if (totPP) totPP.textContent = brFmt(totalPessoa);
   if (totEl) totEl.textContent = brFmt(totalGrupo);
-  if (detEl) detEl.textContent =
-    np + ' pess. x ' + brFmt(totalPessoa);
+  if (detEl) detEl.textContent = np + ' pess. x ' + brFmt(totalPessoa);
 
-  // calculo do parcelamento
   if (resumoEl) {
     if (parcelas > 0) {
-      var restante = totalPessoa;
       var txt = '';
       if (entrada > 0) {
-        restante = totalPessoa - entrada;
-        txt += 'Entrada: ' + brFmt(entrada) + ' por pessoa';
-        if (parcelas > 0 && restante > 0) {
-          var vlParcela = restante / parcelas;
-          txt += '  +  ' + parcelas + 'x de ' + brFmt(vlParcela) + ' por pessoa';
-        }
+        var restante  = totalPessoa - entrada;
+        var vlParcela = restante / parcelas;
+        txt = 'Entrada: ' + brFmt(entrada) +
+              '  +  ' + parcelas + 'x de ' + brFmt(vlParcela) +
+              '  |  Total p/ pessoa: ' + brFmt(totalPessoa) +
+              '  |  Total grupo: ' + brFmt(totalGrupo);
       } else {
         var vlParcela = totalPessoa / parcelas;
-        txt += parcelas + 'x de ' + brFmt(vlParcela) + ' por pessoa';
+        txt = parcelas + 'x de ' + brFmt(vlParcela) +
+              '  |  Total p/ pessoa: ' + brFmt(totalPessoa) +
+              '  |  Total grupo: ' + brFmt(totalGrupo);
       }
-      txt += '   |   Total por pessoa: ' + brFmt(totalPessoa);
-      txt += '   |   Total grupo: ' + brFmt(totalGrupo);
       resumoEl.textContent = txt;
     } else {
       resumoEl.textContent =
@@ -148,6 +320,8 @@ function calcularTotal() {
     }
   }
 }
+
+// ── FORMULARIO ────────────────────────────────────────────
 
 function gv(id) {
   var el = document.getElementById(id);
@@ -169,8 +343,6 @@ function lerFormulario() {
     saida:           gv('saida'),
     dataOrcamento:   gv('dataOrcamento'),
     numeroPessoas:   gv('numeroPessoas'),
-    validade:        gv('validade'),
-    vendedor:        gv('vendedor'),
     roteiro:         gv('roteiro'),
     precoPorPessoa:  gv('precoPorPessoa'),
     ocupacao:        gv('ocupacao'),
@@ -180,65 +352,67 @@ function lerFormulario() {
     entrada:         gv('entrada'),
     numeroParcelas:  gv('numeroParcelas'),
     pagamento:       gv('pagamento'),
+    observacoes:     gv('observacoes'),
+    validade:        gv('validade'),
+    vendedor:        gv('vendedor'),
     inclui:          gv('inclui'),
     naoInclui:       gv('naoInclui'),
-    observacoes:     gv('observacoes'),
-    vooIdaCia:       gv('vooIdaCia'),
-    vooIdaNumero:    gv('vooIdaNumero'),
-    vooIdaOrigem:    gv('vooIdaOrigem'),
-    vooIdaDestino:   gv('vooIdaDestino'),
-    vooIdaPartida:   gv('vooIdaPartida'),
-    vooIdaChegada:   gv('vooIdaChegada'),
-    vooIdaObs:       gv('vooIdaObs'),
-    vooVoltaCia:     gv('vooVoltaCia'),
-    vooVoltaNumero:  gv('vooVoltaNumero'),
-    vooVoltaOrigem:  gv('vooVoltaOrigem'),
-    vooVoltaDestino: gv('vooVoltaDestino'),
-    vooVoltaPartida: gv('vooVoltaPartida'),
-    vooVoltaChegada: gv('vooVoltaChegada'),
-    vooVoltaObs:     gv('vooVoltaObs')
+    voosIda:         lerVoos('ida'),
+    voosVolta:       lerVoos('volta')
   };
 }
 
 function preencherFormulario(d) {
-  var campos = [
-    'cliente','destino','periodo','saida','dataOrcamento',
-    'numeroPessoas','validade','vendedor','roteiro',
-    'precoPorPessoa','ocupacao','taxaEmbarque','outrasTaxas',
-    'outrasTaxasDesc','entrada','numeroParcelas','pagamento',
-    'inclui','naoInclui','observacoes',
-    'vooIdaCia','vooIdaNumero','vooIdaOrigem','vooIdaDestino',
-    'vooIdaPartida','vooIdaChegada','vooIdaObs',
-    'vooVoltaCia','vooVoltaNumero','vooVoltaOrigem','vooVoltaDestino',
-    'vooVoltaPartida','vooVoltaChegada','vooVoltaObs'
-  ];
-  for (var i = 0; i < campos.length; i++) {
-    sv(campos[i], d[campos[i]]);
-  }
+  sv('cliente',         d.cliente);
+  sv('destino',         d.destino);
+  sv('periodo',         d.periodo);
+  sv('saida',           d.saida);
+  sv('dataOrcamento',   d.dataOrcamento);
+  sv('numeroPessoas',   d.numeroPessoas);
+  sv('roteiro',         d.roteiro);
+  sv('precoPorPessoa',  d.precoPorPessoa);
+  sv('ocupacao',        d.ocupacao);
+  sv('taxaEmbarque',    d.taxaEmbarque);
+  sv('outrasTaxas',     d.outrasTaxas);
+  sv('outrasTaxasDesc', d.outrasTaxasDesc);
+  sv('entrada',         d.entrada);
+  sv('numeroParcelas',  d.numeroParcelas);
+  sv('pagamento',       d.pagamento);
+  sv('observacoes',     d.observacoes);
+  sv('validade',        d.validade);
+  sv('vendedor',        d.vendedor);
+  sv('inclui',          d.inclui);
+  sv('naoInclui',       d.naoInclui);
+  preencherVoos('ida',   d.voosIda   || []);
+  preencherVoos('volta', d.voosVolta || []);
   calcularTotal();
 }
 
 function limparFormulario() {
   estadoAtual = { id: null, numero: null };
   ocultarBadge();
-  var campos = [
+  var ids = [
     'cliente','destino','periodo','saida','dataOrcamento',
-    'numeroPessoas','validade','vendedor','roteiro',
-    'precoPorPessoa','ocupacao','taxaEmbarque','outrasTaxas',
-    'outrasTaxasDesc','entrada','numeroParcelas','pagamento',
-    'inclui','naoInclui','observacoes',
-    'vooIdaCia','vooIdaNumero','vooIdaOrigem','vooIdaDestino',
-    'vooIdaPartida','vooIdaChegada','vooIdaObs',
-    'vooVoltaCia','vooVoltaNumero','vooVoltaOrigem','vooVoltaDestino',
-    'vooVoltaPartida','vooVoltaChegada','vooVoltaObs'
+    'numeroPessoas','roteiro','precoPorPessoa','ocupacao',
+    'taxaEmbarque','outrasTaxas','outrasTaxasDesc',
+    'entrada','numeroParcelas','pagamento','observacoes',
+    'validade','vendedor','inclui','naoInclui'
   ];
-  for (var i = 0; i < campos.length; i++) sv(campos[i], '');
+  for (var i = 0; i < ids.length; i++) sv(ids[i], '');
   var elData = document.getElementById('dataOrcamento');
   if (elData) elData.value = new Date().toISOString().slice(0, 10);
+  voosIda   = [];
+  voosVolta = [];
+  document.getElementById('containerVoosIda').innerHTML   = '';
+  document.getElementById('containerVoosVolta').innerHTML = '';
+  adicionarVoo('ida');
+  adicionarVoo('volta');
   calcularTotal();
   carregarLista();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// ── STORAGE ───────────────────────────────────────────────
 
 function obterLista() {
   try {
@@ -250,6 +424,8 @@ function obterLista() {
 function gravarLista(lista) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 }
+
+// ── SALVAR ────────────────────────────────────────────────
 
 function salvarOrcamento() {
   var d = lerFormulario();
@@ -279,6 +455,8 @@ function salvarOrcamento() {
   carregarLista();
 }
 
+// ── DUPLICAR ──────────────────────────────────────────────
+
 function duplicarOrcamento() {
   var d = lerFormulario();
   if (!d.destino) {
@@ -291,6 +469,8 @@ function duplicarOrcamento() {
   alert('Orcamento duplicado! Edite e salve como novo.');
 }
 
+// ── EXCLUIR ───────────────────────────────────────────────
+
 function excluirOrcamento(id) {
   var lista = obterLista();
   var nova  = [];
@@ -302,15 +482,19 @@ function excluirOrcamento(id) {
   else carregarLista();
 }
 
+// ── BUSCA ─────────────────────────────────────────────────
+
 function filtrarLista() {
   var el    = document.getElementById('campoBusca');
   var termo = el ? el.value.toLowerCase() : '';
   var items = document.querySelectorAll('.orcamento-item');
   for (var i = 0; i < items.length; i++) {
-    items[i].style.display =
-      items[i].textContent.toLowerCase().indexOf(termo) >= 0 ? '' : 'none';
+    var txt = items[i].textContent.toLowerCase();
+    items[i].style.display = (txt.indexOf(termo) >= 0) ? '' : 'none';
   }
 }
+
+// ── LISTA SIDEBAR ─────────────────────────────────────────
 
 function carregarLista() {
   var lista = obterLista();
@@ -318,6 +502,7 @@ function carregarLista() {
   var cnt   = document.getElementById('sidebarCount');
   ul.innerHTML = '';
   if (cnt) cnt.textContent = lista.length;
+
   if (!lista.length) {
     var li = document.createElement('li');
     li.textContent   = 'Nenhum orcamento salvo ainda.';
@@ -325,6 +510,7 @@ function carregarLista() {
     ul.appendChild(li);
     return;
   }
+
   var ordenada = lista.slice().sort(function (a, b) { return b.id - a.id; });
   for (var i = 0; i < ordenada.length; i++) {
     criarItemLista(ul, ordenada[i]);
@@ -335,7 +521,6 @@ function criarItemLista(ul, orc) {
   var hoje = new Date().toISOString().slice(0, 10);
   var li   = document.createElement('li');
   li.className = 'orcamento-item';
-  li.setAttribute('data-id', String(orc.id));
   if (orc.id === estadoAtual.id) li.className += ' ativo';
   if (orc.validade) {
     li.style.borderLeft = (orc.validade < hoje)
@@ -348,8 +533,7 @@ function criarItemLista(ul, orc) {
     'justify-content:space-between;gap:6px;';
 
   var wrap = document.createElement('div');
-  wrap.style.cssText =
-    'display:flex;align-items:flex-start;gap:4px;flex:1;';
+  wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;';
 
   if (orc.numero) {
     var numEl = document.createElement('span');
@@ -363,8 +547,7 @@ function criarItemLista(ul, orc) {
   var titulo = document.createElement('div');
   titulo.textContent =
     (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
-  titulo.style.cssText =
-    'font-size:0.87rem;font-weight:600;color:#222;';
+  titulo.style.cssText = 'font-size:0.87rem;font-weight:600;color:#222;';
   wrap.appendChild(titulo);
 
   var del = document.createElement('button');
@@ -409,6 +592,14 @@ function criarItemLista(ul, orc) {
       var items = document.querySelectorAll('.orcamento-item');
       for (var j = 0; j < items.length; j++) {
         items[j].className = 'orcamento-item';
+        if (items[j].style.borderLeft) {
+          var hoje2 = new Date().toISOString().slice(0, 10);
+          if (orcamento.validade) {
+            items[j].style.borderLeft =
+              (orcamento.validade < hoje2)
+                ? '4px solid #c0392b' : '4px solid #2c8c3a';
+          }
+        }
       }
       li.className = 'orcamento-item ativo';
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -417,6 +608,8 @@ function criarItemLista(ul, orc) {
 
   ul.appendChild(li);
 }
+
+// ── IMAGENS BASE64 ────────────────────────────────────────
 
 function imgBase64(src) {
   return new Promise(function (resolve) {
@@ -435,6 +628,8 @@ function imgBase64(src) {
     img.src = src + '?v=' + Date.now();
   });
 }
+
+// ── GERAR PDF ─────────────────────────────────────────────
 
 function gerarPDF() {
   var d = lerFormulario();
@@ -515,7 +710,7 @@ function _buildPDF(d, logoB, seloB) {
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
     doc.text(
-      'Oficina de Turismo  -  Tel / WhatsApp: (35) 98862-2943  -  (35) 98844-5517',
+      'Oficina de Turismo  -  Tel: (35) 98862-2943  -  (35) 98844-5517',
       cx, ry + 2, { align: 'center' });
     doc.text(
       'Instagram: @oficinadeturismo  -  Site: www.oficinatur.com.br',
@@ -612,104 +807,122 @@ function _buildPDF(d, logoB, seloB) {
     y += 5;
   }
 
-  function linhaVoo(label, valor) {
-    if (!valor) return;
-    chk(6);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(30, 74, 125);
-    var lw = doc.getTextWidth(label + '  ');
-    doc.text(label, ML + 4, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(40, 40, 40);
-    doc.text(valor, ML + 4 + lw, y);
-    y += 5.8;
-  }
-
-  function secVoo(titulo, cia, numero, origem, destino, partida, chegada, obs) {
-    var temDados = cia || numero || origem || destino || partida || chegada || obs;
-    if (!temDados) return;
-    chk(40);
-
-    // fundo azul claro
+  function blocoVoo(titulo, lista) {
+    if (!lista || !lista.length) return;
+    chk(14);
     doc.setFillColor(230, 240, 255);
-    doc.roundedRect(ML, y - 3, TW, 8, 2, 2, 'F');
+    doc.roundedRect(ML, y - 4.5, TW, 9, 2, 2, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(9.5);
     doc.setTextColor(30, 74, 125);
-    doc.text(titulo, ML + 4, y + 2);
-    y += 10;
+    doc.text(titulo, ML + 5, y + 1.5);
+    y += 12;
+    rst();
 
-    // tabela do voo
-    var colW = TW / 2 - 2;
-    if (cia || numero) {
-      doc.setFillColor(245, 248, 255);
-      doc.rect(ML, y - 3, TW, 7, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(30, 74, 125);
-      doc.text('Cia Aerea:', ML + 2, y + 1);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(40, 40, 40);
-      doc.text(cia || '-', ML + 24, y + 1);
-      if (numero) {
+    for (var v = 0; v < lista.length; v++) {
+      var voo = lista[v];
+      if (lista.length > 1) {
+        chk(7);
         doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(80, 80, 80);
+        doc.text((v === 0 ? 'Trecho 1' : 'Conexao ' + v) +
+                 (voo.origem && voo.destino ?
+                   '  ' + voo.origem + '  ->  ' + voo.destino : ''),
+                 ML + 2, y);
+        y += 6;
+      }
+
+      var col1 = ML;
+      var col2 = ML + TW / 2 + 4;
+
+      if (voo.cia || voo.numero) {
+        chk(6);
+        doc.setFillColor(245, 248, 255);
+        doc.rect(col1, y - 3, TW, 6.5, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
         doc.setTextColor(30, 74, 125);
-        doc.text('Voo:', ML + colW + 2, y + 1);
+        if (voo.cia) {
+          doc.text('Cia:', col1 + 2, y + 1);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(40, 40, 40);
+          doc.text(voo.cia, col1 + 12, y + 1);
+        }
+        if (voo.numero) {
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 74, 125);
+          doc.text('Voo:', col2, y + 1);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(40, 40, 40);
+          doc.text(voo.numero, col2 + 12, y + 1);
+        }
+        y += 7;
+      }
+
+      if (voo.origem || voo.destino) {
+        chk(6);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(30, 74, 125);
+        doc.text('Origem:', col1 + 2, y + 1);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(40, 40, 40);
-        doc.text(numero, ML + colW + 14, y + 1);
+        doc.text(voo.origem || '-', col1 + 20, y + 1);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 74, 125);
+        doc.text('Destino:', col2, y + 1);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(40, 40, 40);
+        doc.text(voo.destino || '-', col2 + 22, y + 1);
+        y += 7;
       }
-      y += 7;
-    }
 
-    if (origem || destino) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(30, 74, 125);
-      doc.text('Origem:', ML + 2, y + 1);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(40, 40, 40);
-      doc.text(origem || '-', ML + 20, y + 1);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 74, 125);
-      doc.text('Destino:', ML + colW + 2, y + 1);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(40, 40, 40);
-      doc.text(destino || '-', ML + colW + 22, y + 1);
-      y += 7;
-    }
+      if (voo.partida || voo.chegada) {
+        chk(6);
+        doc.setFillColor(245, 248, 255);
+        doc.rect(col1, y - 3, TW, 6.5, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(30, 74, 125);
+        doc.text('Partida:', col1 + 2, y + 1);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(40, 40, 40);
+        doc.text(voo.partida || '-', col1 + 22, y + 1);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 74, 125);
+        doc.text('Chegada:', col2, y + 1);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(40, 40, 40);
+        doc.text(voo.chegada || '-', col2 + 24, y + 1);
+        y += 7;
+      }
 
-    if (partida || chegada) {
-      doc.setFillColor(245, 248, 255);
-      doc.rect(ML, y - 3, TW, 7, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(30, 74, 125);
-      doc.text('Partida:', ML + 2, y + 1);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(40, 40, 40);
-      doc.text(partida || '-', ML + 20, y + 1);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 74, 125);
-      doc.text('Chegada:', ML + colW + 2, y + 1);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(40, 40, 40);
-      doc.text(chegada || '-', ML + colW + 24, y + 1);
-      y += 7;
-    }
+      if (voo.obs) {
+        chk(6);
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8.5);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Obs: ' + voo.obs, col1 + 2, y + 1);
+        y += 7;
+      }
 
-    if (obs) {
-      doc.setFont('helvetica', 'italic');
-      doc.setFontSize(8.5);
-      doc.setTextColor(100, 100, 100);
-      doc.text('Obs: ' + obs, ML + 4, y + 1);
-      y += 7;
+      if (v < lista.length - 1) {
+        chk(6);
+        doc.setDrawColor(180, 200, 230);
+        doc.setLineWidth(0.3);
+        doc.line(ML + 10, y, PW - MR - 10, y);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(30, 74, 125);
+        doc.text('>> CONEXAO >>', PW / 2, y + 4, { align: 'center' });
+        y += 8;
+      }
     }
-    y += 3;
+    y += 4;
   }
 
-  // ── CONSTROI O PDF ────────────────────────────────────────
+  // ── CONSTROI PDF ──────────────────────────────────────────
 
   cabecalho();
   rst();
@@ -751,12 +964,14 @@ function _buildPDF(d, logoB, seloB) {
       return ['Data:', dp[2] + '/' + dp[1] + '/' + dp[0]];
     })() : null,
     d.numeroPessoas ? ['Passageiros:', d.numeroPessoas + ' pessoa(s)'] : null,
-    d.vendedor      ? ['Consultor:',  d.vendedor]       : null
+    d.vendedor      ? ['Consultor:',   d.vendedor]      : null
   ];
+
   var dados = [];
   for (var i = 0; i < dadosBrutos.length; i++) {
     if (dadosBrutos[i]) dados.push(dadosBrutos[i]);
   }
+
   var c1 = ML, c2 = ML + TW / 2 + 4;
   for (var i = 0; i < dados.length; i++) {
     var xp = (i % 2 === 0) ? c1 : c2;
@@ -772,15 +987,12 @@ function _buildPDF(d, logoB, seloB) {
   y += 10;
 
   // VOOS
-  var temVoos = d.vooIdaCia || d.vooIdaOrigem || d.vooVoltaCia || d.vooVoltaOrigem;
-  if (temVoos) {
+  var temIda   = d.voosIda   && d.voosIda.length;
+  var temVolta = d.voosVolta && d.voosVolta.length;
+  if (temIda || temVolta) {
     sec('INFORMACOES DE VOO');
-    secVoo('VOO DE IDA',
-      d.vooIdaCia, d.vooIdaNumero, d.vooIdaOrigem,
-      d.vooIdaDestino, d.vooIdaPartida, d.vooIdaChegada, d.vooIdaObs);
-    secVoo('VOO DE VOLTA',
-      d.vooVoltaCia, d.vooVoltaNumero, d.vooVoltaOrigem,
-      d.vooVoltaDestino, d.vooVoltaPartida, d.vooVoltaChegada, d.vooVoltaObs);
+    if (temIda)   blocoVoo('VOO DE IDA',   d.voosIda);
+    if (temVolta) blocoVoo('VOO DE VOLTA', d.voosVolta);
   }
 
   // ROTEIRO
@@ -799,8 +1011,8 @@ function _buildPDF(d, logoB, seloB) {
 
   if (taxa > 0) campo('Taxa de embarque por pessoa:', brFmt(taxa));
   if (out  > 0) {
-    var descTaxa = d.outrasTaxasDesc ? d.outrasTaxasDesc : 'Outras taxas';
-    campo(descTaxa + ' por pessoa:', brFmt(out));
+    var descOut = d.outrasTaxasDesc ? d.outrasTaxasDesc : 'Outras taxas';
+    campo(descOut + ' por pessoa:', brFmt(out));
   }
 
   var totalPP = pp + taxa + out;
@@ -818,7 +1030,7 @@ function _buildPDF(d, logoB, seloB) {
 
   if (np2 > 0 && totalPP > 0) {
     chk(8);
-    doc.setFillColor(220, 240, 225);
+    doc.setFillColor(210, 235, 215);
     doc.roundedRect(ML, y - 3, TW, 8, 2, 2, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
@@ -829,25 +1041,22 @@ function _buildPDF(d, logoB, seloB) {
   }
   y += 2;
 
-  // FORMA DE PAGAMENTO
+  // PAGAMENTO
   sec('FORMA DE PAGAMENTO');
-  var entrada  = toFloat(d.entrada);
-  var parcelas = parseInt(d.numeroParcelas, 10);
-  if (totalPP > 0 && parcelas > 0) {
-    if (entrada > 0) {
-      var restante  = totalPP - entrada;
-      var vlParcela = restante / parcelas;
-      campo('Entrada por pessoa:', brFmt(entrada));
-      campo(parcelas + ' parcelas de:', brFmt(vlParcela));
-      campo('Total por pessoa:', brFmt(totalPP));
+  var entradaV  = toFloat(d.entrada);
+  var parcelasV = parseInt(d.numeroParcelas, 10);
+  if (totalPP > 0 && parcelasV > 0) {
+    if (entradaV > 0) {
+      var restante  = totalPP - entradaV;
+      var vlParcela = restante / parcelasV;
+      campo('Entrada por pessoa:', brFmt(entradaV));
+      campo(parcelasV + ' parcelas de:', brFmt(vlParcela));
     } else {
-      var vlParcela = totalPP / parcelas;
-      campo(parcelas + ' parcelas de:', brFmt(vlParcela));
-      campo('Total por pessoa:', brFmt(totalPP));
+      var vlParcela = totalPP / parcelasV;
+      campo(parcelasV + ' parcelas de:', brFmt(vlParcela));
     }
-    if (np2 > 0) {
-      campo('Total do grupo:', brFmt(totalPP * np2));
-    }
+    campo('Total por pessoa:', brFmt(totalPP));
+    if (np2 > 0) campo('Total do grupo:', brFmt(totalPP * np2));
   }
   if (d.pagamento) bloco(d.pagamento, 3);
   y += 2;
@@ -863,13 +1072,14 @@ function _buildPDF(d, logoB, seloB) {
     bloco(d.observacoes, 5);
   }
 
-  // rodape
+  // RODAPE EM TODAS AS PAGINAS
   var tot = doc.getNumberOfPages();
   for (var p = 1; p <= tot; p++) {
     doc.setPage(p);
     rodape(p, tot);
   }
 
+  // SALVAR
   var nd  = limparNome(d.destino || 'Oficina');
   var nc  = limparNome(d.cliente || '');
   if (nc.length > 20) nc = nc.slice(0, 20);
