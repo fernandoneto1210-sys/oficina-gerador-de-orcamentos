@@ -20,8 +20,6 @@ window.addEventListener('load', function () {
   carregarLista();
 });
 
-// ── UTILITARIOS ───────────────────────────────────────────
-
 function proximoNumero() {
   var n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
   localStorage.setItem(COUNTER_KEY, String(n));
@@ -40,19 +38,14 @@ function brFmt(v) {
 (?=(\d{3})+(?!\d))/g, '.');
 }
 
-// CORRECAO DEFINITIVA — sem nenhuma regex com acento
 function limparNome(str) {
-  var resultado = '';
-  var permitidos = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_- ';
+  var ok = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_- ';
+  var r  = '';
   for (var i = 0; i < str.length; i++) {
-    if (permitidos.indexOf(str[i]) >= 0) {
-      resultado += str[i];
-    }
+    if (ok.indexOf(str[i]) >= 0) r += str[i];
   }
-  return resultado.replace(/ /g, '_').slice(0, 25);
+  return r.replace(/ /g, '_').slice(0, 25);
 }
-
-// ── BADGE ─────────────────────────────────────────────────
 
 function mostrarBadge(numero) {
   estadoAtual.numero = numero;
@@ -69,8 +62,6 @@ function ocultarBadge() {
   estadoAtual = { id: null, numero: null };
 }
 
-// ── CALCULADORA ───────────────────────────────────────────
-
 function calcularTotal() {
   var npEl  = document.getElementById('numeroPessoas');
   var ppEl  = document.getElementById('precoPorPessoa');
@@ -79,20 +70,22 @@ function calcularTotal() {
   if (!npEl || !ppEl || !totEl) return;
 
   var np  = parseInt(npEl.value, 10);
-  var raw = ppEl.value.replace(/[^0-9,.]/g, '').replace(',', '.');
-  var pp  = parseFloat(raw);
+  var raw = '';
+  for (var i = 0; i < ppEl.value.length; i++) {
+    var c = ppEl.value[i];
+    if ((c >= '0' && c <= '9') || c === ',' || c === '.') raw += c;
+  }
+  raw = raw.replace(',', '.');
+  var pp = parseFloat(raw);
 
   if (!np || np <= 0 || isNaN(pp) || pp <= 0) {
     totEl.textContent = '-';
     if (detEl) detEl.textContent = '';
     return;
   }
-
   totEl.textContent = brFmt(np * pp);
   if (detEl) detEl.textContent = np + ' pessoa(s) x ' + brFmt(pp);
 }
-
-// ── FORMULARIO ────────────────────────────────────────────
 
 function gv(id) {
   var el = document.getElementById(id);
@@ -148,19 +141,19 @@ function preencherFormulario(d) {
 function limparFormulario() {
   estadoAtual = { id: null, numero: null };
   ocultarBadge();
-  ['cliente','destino','periodo','saida','dataOrcamento',
-   'numeroPessoas','roteiro','precoPorPessoa','ocupacao',
-   'pagamento','observacoes','validade','vendedor',
-   'inclui','naoInclui'
-  ].forEach(function (id) { sv(id, ''); });
+  var ids = [
+    'cliente','destino','periodo','saida','dataOrcamento',
+    'numeroPessoas','roteiro','precoPorPessoa','ocupacao',
+    'pagamento','observacoes','validade','vendedor',
+    'inclui','naoInclui'
+  ];
+  for (var i = 0; i < ids.length; i++) sv(ids[i], '');
   var elData = document.getElementById('dataOrcamento');
   if (elData) elData.value = new Date().toISOString().split('T')[0];
   calcularTotal();
   carregarLista();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-// ── STORAGE ───────────────────────────────────────────────
 
 function obterLista() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
@@ -170,8 +163,6 @@ function obterLista() {
 function gravarLista(lista) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 }
-
-// ── SALVAR ────────────────────────────────────────────────
 
 function salvarOrcamento() {
   var d = lerFormulario();
@@ -201,8 +192,6 @@ function salvarOrcamento() {
   carregarLista();
 }
 
-// ── DUPLICAR ──────────────────────────────────────────────
-
 function duplicarOrcamento() {
   var d = lerFormulario();
   if (!d.destino) {
@@ -215,10 +204,12 @@ function duplicarOrcamento() {
   alert('Orcamento duplicado! Edite e salve como novo.');
 }
 
-// ── EXCLUIR ───────────────────────────────────────────────
-
 function excluirOrcamento(id) {
-  var nova = obterLista().filter(function (o) { return o.id !== id; });
+  var lista = obterLista();
+  var nova  = [];
+  for (var i = 0; i < lista.length; i++) {
+    if (lista[i].id !== id) nova.push(lista[i]);
+  }
   gravarLista(nova);
   if (id === estadoAtual.id) {
     limparFormulario();
@@ -227,17 +218,15 @@ function excluirOrcamento(id) {
   }
 }
 
-// ── BUSCA ─────────────────────────────────────────────────
-
 function filtrarLista() {
   var el    = document.getElementById('campoBusca');
   var termo = el ? el.value.toLowerCase() : '';
-  document.querySelectorAll('.orcamento-item').forEach(function (li) {
-    li.style.display = li.textContent.toLowerCase().indexOf(termo) >= 0 ? '' : 'none';
-  });
+  var items = document.querySelectorAll('.orcamento-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].style.display =
+      items[i].textContent.toLowerCase().indexOf(termo) >= 0 ? '' : 'none';
+  }
 }
-
-// ── SIDEBAR ───────────────────────────────────────────────
 
 function carregarLista() {
   var lista = obterLista();
@@ -254,96 +243,97 @@ function carregarLista() {
     return;
   }
 
-  lista.slice().sort(function (a, b) { return b.id - a.id; })
-  .forEach(function (orc) {
+  var ordenada = lista.slice().sort(function (a, b) { return b.id - a.id; });
 
-    var li        = document.createElement('li');
-    li.className  = 'orcamento-item';
-    li.dataset.id = String(orc.id);
-    if (orc.id === estadoAtual.id) li.classList.add('ativo');
+  for (var i = 0; i < ordenada.length; i++) {
+    (function (orc) {
 
-    // alerta de validade
-    if (orc.validade) {
-      var hoje = new Date().toISOString().split('T')[0];
-      if (orc.validade < hoje) {
-        li.style.borderLeft = '4px solid #c0392b';
-      } else {
-        li.style.borderLeft = '4px solid #2c8c3a';
+      var li        = document.createElement('li');
+      li.className  = 'orcamento-item';
+      li.dataset.id = String(orc.id);
+      if (orc.id === estadoAtual.id) li.classList.add('ativo');
+
+      if (orc.validade) {
+        var hoje = new Date().toISOString().split('T')[0];
+        li.style.borderLeft = orc.validade < hoje
+          ? '4px solid #c0392b'
+          : '4px solid #2c8c3a';
       }
-    }
 
-    var topo = document.createElement('div');
-    topo.style.cssText = 'display:flex;align-items:flex-start;justify-content:space-between;gap:6px;';
+      var topo = document.createElement('div');
+      topo.style.cssText =
+        'display:flex;align-items:flex-start;' +
+        'justify-content:space-between;gap:6px;';
 
-    var wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;min-width:0;';
+      var wrap = document.createElement('div');
+      wrap.style.cssText =
+        'display:flex;align-items:flex-start;gap:4px;flex:1;min-width:0;';
 
-    if (orc.numero) {
-      var num = document.createElement('span');
-      num.style.cssText =
-        'background:#2c8c3a;color:#fff;font-size:0.68rem;font-weight:700;' +
-        'border-radius:4px;padding:2px 6px;flex-shrink:0;';
-      num.textContent = fmt(orc.numero);
-      wrap.appendChild(num);
-    }
+      if (orc.numero) {
+        var numEl = document.createElement('span');
+        numEl.style.cssText =
+          'background:#2c8c3a;color:#fff;font-size:0.68rem;font-weight:700;' +
+          'border-radius:4px;padding:2px 6px;flex-shrink:0;';
+        numEl.textContent = fmt(orc.numero);
+        wrap.appendChild(numEl);
+      }
 
-    var txt = document.createElement('div');
-    txt.style.cssText = 'font-size:0.87rem;font-weight:600;color:#222;line-height:1.35;';
-    txt.textContent   = (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
-    wrap.appendChild(txt);
+      var txt = document.createElement('div');
+      txt.style.cssText =
+        'font-size:0.87rem;font-weight:600;color:#222;line-height:1.35;';
+      txt.textContent =
+        (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
+      wrap.appendChild(txt);
 
-    var del = document.createElement('button');
-    del.textContent   = 'X';
-    del.title         = 'Excluir';
-    del.style.cssText =
-      'border:none;background:#fee;color:#c0392b;cursor:pointer;' +
-      'font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;' +
-      'flex-shrink:0;opacity:0.7;';
-    del.onmouseover = function () { this.style.opacity = '1'; };
-    del.onmouseout  = function () { this.style.opacity = '0.7'; };
-
-    (function (oid, onum) {
+      var del = document.createElement('button');
+      del.textContent   = 'X';
+      del.title         = 'Excluir';
+      del.style.cssText =
+        'border:none;background:transparent;cursor:pointer;' +
+        'font-size:13px;font-weight:700;color:#c0392b;' +
+        'padding:0 4px;opacity:0.5;flex-shrink:0;';
+      del.onmouseover = function () { this.style.opacity = '1'; };
+      del.onmouseout  = function () { this.style.opacity = '0.5'; };
       del.onclick = function (e) {
         e.stopPropagation();
-        if (confirm('Excluir orcamento N ' + fmt(onum || 0) + '?')) {
-          excluirOrcamento(oid);
+        if (confirm('Excluir orcamento N ' + fmt(orc.numero || 0) + '?')) {
+          excluirOrcamento(orc.id);
         }
       };
-    })(orc.id, orc.numero);
 
-    topo.appendChild(wrap);
-    topo.appendChild(del);
+      topo.appendChild(wrap);
+      topo.appendChild(del);
 
-    var meta = document.createElement('div');
-    meta.style.cssText = 'font-size:0.74rem;color:#888;margin-top:3px;';
-    var partes = [];
-    if (orc.dataOrcamento) partes.push(orc.dataOrcamento.split('-').reverse().join('/'));
-    if (orc.periodo)       partes.push(orc.periodo);
-    if (orc.numeroPessoas) partes.push(orc.numeroPessoas + ' pax');
-    meta.textContent = partes.join(' | ') || '-';
+      var meta = document.createElement('div');
+      meta.style.cssText = 'font-size:0.74rem;color:#888;margin-top:3px;';
+      var partes = [];
+      if (orc.dataOrcamento)
+        partes.push(orc.dataOrcamento.split('-').reverse().join('/'));
+      if (orc.periodo)       partes.push(orc.periodo);
+      if (orc.numeroPessoas) partes.push(orc.numeroPessoas + ' pax');
+      meta.textContent = partes.join(' | ') || '-';
 
-    li.appendChild(topo);
-    li.appendChild(meta);
+      li.appendChild(topo);
+      li.appendChild(meta);
 
-    (function (dados) {
       li.onclick = function () {
-        preencherFormulario(dados);
-        estadoAtual.id     = dados.id;
-        estadoAtual.numero = dados.numero;
-        if (dados.numero) mostrarBadge(dados.numero);
-        document.querySelectorAll('.orcamento-item').forEach(function (el) {
-          el.classList.remove('ativo');
-        });
+        preencherFormulario(orc);
+        estadoAtual.id     = orc.id;
+        estadoAtual.numero = orc.numero;
+        if (orc.numero) mostrarBadge(orc.numero);
+        var items = document.querySelectorAll('.orcamento-item');
+        for (var j = 0; j < items.length; j++) {
+          items[j].classList.remove('ativo');
+        }
         li.classList.add('ativo');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       };
-    })(orc);
 
-    ul.appendChild(li);
-  });
+      ul.appendChild(li);
+
+    })(ordenada[i]);
+  }
 }
-
-// ── IMAGEM BASE64 ─────────────────────────────────────────
 
 function imgBase64(src) {
   return new Promise(function (resolve) {
@@ -362,8 +352,6 @@ function imgBase64(src) {
     img.src = src + '?v=' + Date.now();
   });
 }
-
-// ── GERAR PDF ─────────────────────────────────────────────
 
 function gerarPDF() {
   var d = lerFormulario();
@@ -430,7 +418,8 @@ function _buildPDF(d, logoB, seloB) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
       doc.setTextColor(100, 100, 100);
-      doc.text('Orcamento N ' + fmt(d.numero), PW - MR, HEND - 8, { align: 'right' });
+      doc.text('Orcamento N ' + fmt(d.numero),
+               PW - MR, HEND - 8, { align: 'right' });
     }
   }
 
@@ -442,18 +431,22 @@ function _buildPDF(d, logoB, seloB) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text('Oficina de Turismo  -  Tel / WhatsApp: (35) 98862-2943  -  (35) 98844-5517',
-             cx, ry + 2, { align: 'center' });
-    doc.text('Instagram: @oficinadeturismo  -  Site: www.oficinatur.com.br',
-             cx, ry + 7, { align: 'center' });
+    doc.text(
+      'Oficina de Turismo  -  Tel / WhatsApp: (35) 98862-2943  -  (35) 98844-5517',
+      cx, ry + 2, { align: 'center' });
+    doc.text(
+      'Instagram: @oficinadeturismo  -  Site: www.oficinatur.com.br',
+      cx, ry + 7, { align: 'center' });
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 74, 125);
-    doc.text('30 anos de experiencia em viagens e grupos acompanhados',
-             cx, ry + 12, { align: 'center' });
+    doc.text(
+      '30 anos de experiencia em viagens e grupos acompanhados',
+      cx, ry + 12, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(180, 180, 180);
-    doc.text('Pag. ' + pag + ' / ' + tot, PW - MR, ry + 12, { align: 'right' });
+    doc.text('Pag. ' + pag + ' / ' + tot,
+             PW - MR, ry + 12, { align: 'right' });
   }
 
   function sec(txt) {
@@ -487,14 +480,14 @@ function _buildPDF(d, logoB, seloB) {
     rst();
     var lns = doc.splitTextToSize(txt, TW);
     var lh  = 5.4;
-    lns.forEach(function (ln) {
+    for (var i = 0; i < lns.length; i++) {
       chk(lh);
       doc.setTextColor(40, 40, 40);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
-      doc.text(ln, ML, y);
+      doc.text(lns[i], ML, y);
       y += lh;
-    });
+    }
     if (sp) y += sp;
   }
 
@@ -538,7 +531,6 @@ function _buildPDF(d, logoB, seloB) {
     y += 5;
   }
 
-  // CONSTROI O PDF
   cabecalho();
   rst();
 
@@ -571,26 +563,31 @@ function _buildPDF(d, logoB, seloB) {
   doc.setFontSize(9.5);
   var c1 = ML, c2 = ML + TW / 2 + 4;
   var dados = [
-    d.cliente       ? ['Cliente:',     d.cliente]      : null,
-    d.saida         ? ['Saida de:',    d.saida]        : null,
-    d.periodo       ? ['Periodo:',     d.periodo]      : null,
+    d.cliente       ? ['Cliente:',     d.cliente]     : null,
+    d.saida         ? ['Saida de:',    d.saida]       : null,
+    d.periodo       ? ['Periodo:',     d.periodo]     : null,
     d.dataOrcamento ? ['Data:',
-      d.dataOrcamento.split('-').reverse().join('/')]   : null,
+      d.dataOrcamento.split('-').reverse().join('/')]  : null,
     d.numeroPessoas ? ['Passageiros:',
-      d.numeroPessoas + ' pessoa(s)']                  : null,
-    d.vendedor      ? ['Consultor:',   d.vendedor]     : null
-  ].filter(Boolean);
+      d.numeroPessoas + ' pessoa(s)']                 : null,
+    d.vendedor      ? ['Consultor:',   d.vendedor]    : null
+  ];
 
+  var dadosFiltrados = [];
   for (var i = 0; i < dados.length; i++) {
+    if (dados[i]) dadosFiltrados.push(dados[i]);
+  }
+
+  for (var i = 0; i < dadosFiltrados.length; i++) {
     var xp = (i % 2 === 0) ? c1 : c2;
     if (i % 2 === 0 && i > 0) y += 6.5;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 74, 125);
-    var lw = doc.getTextWidth(dados[i][0] + ' ');
-    doc.text(dados[i][0], xp, y);
+    var lw = doc.getTextWidth(dadosFiltrados[i][0] + ' ');
+    doc.text(dadosFiltrados[i][0], xp, y);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(40, 40, 40);
-    doc.text(dados[i][1], xp + lw, y);
+    doc.text(dadosFiltrados[i][1], xp + lw, y);
   }
   y += 10;
 
@@ -602,9 +599,12 @@ function _buildPDF(d, logoB, seloB) {
   if (d.ocupacao) campo('Base de ocupacao:', d.ocupacao);
 
   var np2 = parseInt(d.numeroPessoas, 10);
-  var pp2 = parseFloat(
-    (d.precoPorPessoa || '').replace(/[^0-9,.]/g, '').replace(',', '.')
-  );
+  var raw = '';
+  for (var i = 0; i < (d.precoPorPessoa || '').length; i++) {
+    var c = d.precoPorPessoa[i];
+    if ((c >= '0' && c <= '9') || c === ',' || c === '.') raw += c;
+  }
+  var pp2 = parseFloat(raw.replace(',', '.'));
   if (np2 > 0 && pp2 > 0) {
     campo('Total do grupo (' + np2 + ' pax):', brFmt(np2 * pp2));
   }
