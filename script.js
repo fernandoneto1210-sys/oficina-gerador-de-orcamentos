@@ -325,8 +325,6 @@ function ocultarBadge() {
 
 // ── CALCULADORA ───────────────────────────────────────────
 
-// ── CALCULADORA ───────────────────────────────────────────
-
 function calcularTotal() {
   var np       = parseInt(gv('numeroPessoas'), 10);
   var pp       = toFloat(gv('precoPorPessoa'));
@@ -360,19 +358,20 @@ function calcularTotal() {
     if (parcelas > 0) {
       var vlParcelaPorPessoa = 0;
       var vlParcelaTotalGrupo = 0;
+      var entradaTotalGrupo = entrada * np; // Calcula a entrada total do grupo
       var txt = '';
 
       if (entrada > 0) {
         vlParcelaPorPessoa = (totalPessoa - entrada) / parcelas;
-        vlParcelaTotalGrupo = vlParcelaPorPessoa * np; // Valor da parcela para o grupo
-        txt = 'Entrada: ' + brFmt(entrada) +
-              '  +  ' + parcelas + 'x de ' + brFmt(vlParcelaTotalGrupo) + // Aqui mostra o valor total da parcela
+        vlParcelaTotalGrupo = vlParcelaPorPessoa * np;
+        txt = 'Entrada (grupo): ' + brFmt(entradaTotalGrupo) + // Mostra a entrada total do grupo
+              '  +  ' + parcelas + 'x de ' + brFmt(vlParcelaTotalGrupo) +
               '  |  Total p/ pessoa: ' + brFmt(totalPessoa) +
               '  |  Total grupo: ' + brFmt(totalGrupo);
       } else {
         vlParcelaPorPessoa = totalPessoa / parcelas;
-        vlParcelaTotalGrupo = vlParcelaPorPessoa * np; // Valor da parcela para o grupo
-        txt = parcelas + 'x de ' + brFmt(vlParcelaTotalGrupo) + // Aqui mostra o valor total da parcela
+        vlParcelaTotalGrupo = vlParcelaPorPessoa * np;
+        txt = parcelas + 'x de ' + brFmt(vlParcelaTotalGrupo) +
               '  |  Total p/ pessoa: ' + brFmt(totalPessoa) +
               '  |  Total grupo: ' + brFmt(totalGrupo);
       }
@@ -383,6 +382,7 @@ function calcularTotal() {
     }
   }
 }
+
 // ── FORMULARIO ────────────────────────────────────────────
 
 function gv(id) {
