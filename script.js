@@ -416,7 +416,7 @@ function lerFormulario() {
     naoInclui:       gv('naoInclui'),
     voosIda:         lerVoos('ida'),
     voosVolta:       lerVoos('volta'),
-    fotoDestino:     fotoDestinoBase64 // Salva a foto em base64
+    fotoDestino:     fotoDestinoBase64 // Salva a foto no objeto do orcamento
   };
 }
 
@@ -444,7 +444,7 @@ function preencherFormulario(d) {
   preencherVoos('ida',   d.voosIda   || []);
   preencherVoos('volta', d.voosVolta || []);
 
-  // Preencher foto do destino
+  // Carrega a foto do destino
   fotoDestinoBase64 = d.fotoDestino || null;
   var img = document.getElementById('previewFotoImg');
   var box = document.getElementById('previewFotoBox');
@@ -680,7 +680,7 @@ function carregarOrcamento(orc) {
 function imgBase64(src) {
   return new Promise(function (resolve) {
     var img = new Image();
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = 'anonymous'; // Necessário para carregar imagens de outras origens
     img.onload = function () {
       try {
         var cv  = document.createElement('canvas');
@@ -705,7 +705,8 @@ function gerarPDF() {
     imgBase64('logo-oficina.png'),
     imgBase64('selo30anos.png')
   ]).then(function (imgs) {
-    _buildPDF(d, imgs[0], imgs[1], fotoDestinoBase64);
+    // Passa a foto do destino que está no objeto 'd'
+    _buildPDF(d, imgs[0], imgs[1], d.fotoDestino);
   });
 }
 
@@ -1040,13 +1041,15 @@ function _buildPDF(d, logoB, seloB, fotoB) {
       var fotoH = 65;
       var fotoW = TW;
       chk(fotoH + 4);
-      doc.addImage(fotoB, 'JPEG', ML, y, fotoW, fotoH,
-                   '', 'FAST');
+      // Adicionado 'JPEG' como tipo de imagem para melhor compatibilidade
+      doc.addImage(fotoB, 'JPEG', ML, y, fotoW, fotoH, '', 'FAST');
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
       doc.rect(ML, y, fotoW, fotoH);
       y += fotoH + 5;
-    } catch (e) {}
+    } catch (e) {
+      console.error("Erro ao adicionar imagem ao PDF:", e);
+    }
   }
 
   if (d.validade) {
