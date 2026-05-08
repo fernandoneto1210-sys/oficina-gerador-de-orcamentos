@@ -11,20 +11,21 @@ window.addEventListener('load', function () {
   document.getElementById('btnLimpar').onclick   = limparFormulario;
   document.getElementById('btnNovo').onclick     = limparFormulario;
   document.getElementById('btnDuplicar').onclick = duplicarOrcamento;
-  document.getElementById('btnAddVooIda').onclick = function () {
-    adicionarVoo('ida');
-  };
-  document.getElementById('btnAddVooVolta').onclick = function () {
-    adicionarVoo('volta');
-  };
+
+  var btnAddIda   = document.getElementById('btnAddVooIda');
+  var btnAddVolta = document.getElementById('btnAddVooVolta');
+  if (btnAddIda)   btnAddIda.onclick   = function () { adicionarVoo('ida'); };
+  if (btnAddVolta) btnAddVolta.onclick = function () { adicionarVoo('volta'); };
 
   var elData = document.getElementById('dataOrcamento');
   if (elData) elData.value = new Date().toISOString().slice(0, 10);
 
-  var ids = ['numeroPessoas','precoPorPessoa','taxaEmbarque',
-             'outrasTaxas','entrada','numeroParcelas'];
-  for (var i = 0; i < ids.length; i++) {
-    var el = document.getElementById(ids[i]);
+  var calcIds = [
+    'numeroPessoas', 'precoPorPessoa', 'taxaEmbarque',
+    'outrasTaxas', 'entrada', 'numeroParcelas'
+  ];
+  for (var i = 0; i < calcIds.length; i++) {
+    var el = document.getElementById(calcIds[i]);
     if (el) el.addEventListener('input', calcularTotal);
   }
 
@@ -33,23 +34,23 @@ window.addEventListener('load', function () {
   carregarLista();
 });
 
-// ── VOOS ──────────────────────────────────────────────────
-
 function adicionarVoo(tipo) {
   vooIdxCtrl++;
   var idx       = vooIdxCtrl;
   var arr       = (tipo === 'ida') ? voosIda : voosVolta;
-  var container = document.getElementById(
-    tipo === 'ida' ? 'containerVoosIda' : 'containerVoosVolta'
-  );
-  var cor       = (tipo === 'ida') ? '#1e4a7d' : '#2c8c3a';
-  var num       = arr.length + 1;
+  var cId       = (tipo === 'ida') ? 'containerVoosIda' : 'containerVoosVolta';
+  var container = document.getElementById(cId);
+  if (!container) return;
+
+  var cor   = (tipo === 'ida') ? '#1e4a7d' : '#2c8c3a';
+  var num   = arr.length + 1;
+  var label = (tipo === 'ida') ? 'Voo de Ida' : 'Voo de Volta';
 
   var div = document.createElement('div');
   div.id  = 'vooBloco_' + tipo + '_' + idx;
   div.style.cssText =
     'border:1.5px solid #dde3ea;border-radius:8px;' +
-    'padding:12px;margin-bottom:10px;position:relative;';
+    'padding:12px;margin-bottom:10px;background:#fafbff;';
 
   var cabec = document.createElement('div');
   cabec.style.cssText =
@@ -58,68 +59,76 @@ function adicionarVoo(tipo) {
 
   var tit = document.createElement('div');
   tit.style.cssText =
-    'font-size:0.8rem;font-weight:700;color:' + cor + ';' +
+    'font-size:0.82rem;font-weight:700;color:' + cor + ';' +
     'text-transform:uppercase;';
-  tit.textContent = (tipo === 'ida' ? 'Voo de Ida' : 'Voo de Volta') +
-                    ' ' + num;
+  tit.textContent = label + ' ' + num;
 
   var btnRem = document.createElement('button');
-  btnRem.type      = 'button';
+  btnRem.type        = 'button';
   btnRem.textContent = 'Remover';
   btnRem.style.cssText =
     'font-size:0.75rem;padding:3px 10px;border:1px solid #c0392b;' +
     'background:#fff;color:#c0392b;border-radius:4px;cursor:pointer;';
-  (function (d, t, i) {
-    btnRem.onclick = function () { removerVoo(d, t, i); };
+
+  (function (divRef, tipoRef, idxRef) {
+    btnRem.onclick = function () { removerVoo(divRef, tipoRef, idxRef); };
   })(div, tipo, idx);
 
   cabec.appendChild(tit);
   cabec.appendChild(btnRem);
   div.appendChild(cabec);
 
-  var campos = [
+  var linhas = [
     [
-      { id: 'cia',     label: 'Cia Aerea',          placeholder: 'Ex: LATAM / GOL / Azul' },
-      { id: 'numero',  label: 'N do Voo',            placeholder: 'Ex: LA3042' }
+      { id: 'cia',     label: 'Cia Aerea',
+        ph: 'Ex: LATAM / GOL / Azul' },
+      { id: 'numero',  label: 'N do Voo',
+        ph: 'Ex: LA3042' }
     ],
     [
-      { id: 'origem',  label: 'Origem',              placeholder: 'Ex: Campinas (VCP)' },
-      { id: 'destino', label: 'Destino',             placeholder: 'Ex: Recife (REC)' }
+      { id: 'origem',  label: 'Origem',
+        ph: 'Ex: Campinas (VCP)' },
+      { id: 'destino', label: 'Destino',
+        ph: 'Ex: Recife (REC)' }
     ],
     [
-      { id: 'partida', label: 'Data / Hora Partida', placeholder: 'Ex: 10/07/2025 - 06h30' },
-      { id: 'chegada', label: 'Data / Hora Chegada', placeholder: 'Ex: 10/07/2025 - 08h45' }
+      { id: 'partida', label: 'Data e Hora Partida',
+        ph: 'Ex: 10/07/2025 - 06h30' },
+      { id: 'chegada', label: 'Data e Hora Chegada',
+        ph: 'Ex: 10/07/2025 - 08h45' }
     ],
     [
-      { id: 'obs',     label: 'Observacao',          placeholder: 'Ex: Conexao em GRU', full: true }
+      { id: 'obs', label: 'Observacao',
+        ph: 'Ex: Conexao em GRU', full: true }
     ]
   ];
 
-  for (var r = 0; r < campos.length; r++) {
+  for (var r = 0; r < linhas.length; r++) {
     var row = document.createElement('div');
     row.style.cssText =
       'display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;';
 
-    for (var c = 0; c < campos[r].length; c++) {
-      var campo = campos[r][c];
-      var fg    = document.createElement('div');
-      fg.style.cssText = 'display:flex;flex-direction:column;' +
-        (campo.full ? 'flex:1;min-width:100%;' : 'flex:1;min-width:120px;');
+    for (var c = 0; c < linhas[r].length; c++) {
+      var cf = linhas[r][c];
+      var fg = document.createElement('div');
+      fg.style.cssText =
+        'display:flex;flex-direction:column;' +
+        (cf.full ? 'flex:1;min-width:100%;' : 'flex:1;min-width:120px;');
 
       var lbl = document.createElement('label');
       lbl.style.cssText =
         'font-size:0.8rem;font-weight:600;color:#444;margin-bottom:3px;';
-      var uid = 'voo_' + tipo + '_' + idx + '_' + campo.id;
+      var uid = 'voo_' + tipo + '_' + idx + '_' + cf.id;
       lbl.setAttribute('for', uid);
-      lbl.textContent = campo.label;
+      lbl.textContent = cf.label;
 
       var inp = document.createElement('input');
       inp.type        = 'text';
       inp.id          = uid;
-      inp.placeholder = campo.placeholder;
+      inp.placeholder = cf.ph;
       inp.style.cssText =
-        'padding:6px 8px;border:1.5px solid #dde3ea;' +
-        'border-radius:6px;font-size:0.85rem;';
+        'padding:6px 8px;border:1.5px solid #dde3ea;border-radius:6px;' +
+        'font-size:0.85rem;background:#fff;box-sizing:border-box;width:100%;';
 
       fg.appendChild(lbl);
       fg.appendChild(inp);
@@ -133,8 +142,8 @@ function adicionarVoo(tipo) {
 }
 
 function removerVoo(div, tipo, idx) {
-  var arr = (tipo === 'ida') ? voosIda : voosVolta;
-  if (div.parentNode) div.parentNode.removeChild(div);
+  if (div && div.parentNode) div.parentNode.removeChild(div);
+  var arr  = (tipo === 'ida') ? voosIda : voosVolta;
   var nova = [];
   for (var i = 0; i < arr.length; i++) {
     if (arr[i].idx !== idx) nova.push(arr[i]);
@@ -170,14 +179,14 @@ function gvEl(id) {
 }
 
 function preencherVoos(tipo, lista) {
-  var container = document.getElementById(
-    tipo === 'ida' ? 'containerVoosIda' : 'containerVoosVolta'
-  );
+  var cId       = (tipo === 'ida') ? 'containerVoosIda' : 'containerVoosVolta';
+  var container = document.getElementById(cId);
+  if (!container) return;
   if (tipo === 'ida') voosIda = [];
   else voosVolta = [];
   container.innerHTML = '';
 
-  if (!lista || !lista.length) {
+  if (!lista || lista.length === 0) {
     adicionarVoo(tipo);
     return;
   }
@@ -193,8 +202,6 @@ function preencherVoos(tipo, lista) {
     }
   }
 }
-
-// ── UTILITARIOS ───────────────────────────────────────────
 
 function proximoNumero() {
   var n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
@@ -212,7 +219,7 @@ function brFmt(v) {
   var partes  = v.toFixed(2).split('.');
   var inteiro = partes[0];
   var decimal = partes[1];
-  var res = '';
+  var res   = '';
   var count = 0;
   for (var i = inteiro.length - 1; i >= 0; i--) {
     if (count > 0 && count % 3 === 0) res = '.' + res;
@@ -224,21 +231,25 @@ function brFmt(v) {
 
 function toFloat(str) {
   if (!str) return 0;
-  var r = '';
+  var r      = '';
   var temSep = false;
   for (var i = 0; i < str.length; i++) {
     var c = str[i];
     if (c >= '0' && c <= '9') r += c;
-    if ((c === ',' || c === '.') && !temSep) { r += '.'; temSep = true; }
+    if ((c === ',' || c === '.') && !temSep) {
+      r += '.';
+      temSep = true;
+    }
   }
   var v = parseFloat(r);
   return isNaN(v) ? 0 : v;
 }
 
 function limparNome(str) {
-  var ok = 'abcdefghijklmnopqrstuvwxyz' +
-           'ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
-           '0123456789_- ';
+  var ok =
+    'abcdefghijklmnopqrstuvwxyz' +
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
+    '0123456789_- ';
   var r = '';
   for (var i = 0; i < str.length; i++) {
     if (ok.indexOf(str[i]) >= 0) r += str[i];
@@ -265,8 +276,6 @@ function ocultarBadge() {
   if (el) el.style.display = 'none';
   estadoAtual = { id: null, numero: null };
 }
-
-// ── CALCULADORA ───────────────────────────────────────────
 
 function calcularTotal() {
   var np       = parseInt(gv('numeroPessoas'), 10);
@@ -299,16 +308,16 @@ function calcularTotal() {
 
   if (resumoEl) {
     if (parcelas > 0) {
+      var vlParcela = 0;
       var txt = '';
       if (entrada > 0) {
-        var restante  = totalPessoa - entrada;
-        var vlParcela = restante / parcelas;
+        vlParcela = (totalPessoa - entrada) / parcelas;
         txt = 'Entrada: ' + brFmt(entrada) +
               '  +  ' + parcelas + 'x de ' + brFmt(vlParcela) +
               '  |  Total p/ pessoa: ' + brFmt(totalPessoa) +
               '  |  Total grupo: ' + brFmt(totalGrupo);
       } else {
-        var vlParcela = totalPessoa / parcelas;
+        vlParcela = totalPessoa / parcelas;
         txt = parcelas + 'x de ' + brFmt(vlParcela) +
               '  |  Total p/ pessoa: ' + brFmt(totalPessoa) +
               '  |  Total grupo: ' + brFmt(totalGrupo);
@@ -316,12 +325,10 @@ function calcularTotal() {
       resumoEl.textContent = txt;
     } else {
       resumoEl.textContent =
-        'Informe o numero de parcelas para calcular o parcelamento.';
+        'Informe o numero de parcelas para calcular.';
     }
   }
 }
-
-// ── FORMULARIO ────────────────────────────────────────────
 
 function gv(id) {
   var el = document.getElementById(id);
@@ -403,16 +410,16 @@ function limparFormulario() {
   if (elData) elData.value = new Date().toISOString().slice(0, 10);
   voosIda   = [];
   voosVolta = [];
-  document.getElementById('containerVoosIda').innerHTML   = '';
-  document.getElementById('containerVoosVolta').innerHTML = '';
+  var cIda   = document.getElementById('containerVoosIda');
+  var cVolta = document.getElementById('containerVoosVolta');
+  if (cIda)   cIda.innerHTML   = '';
+  if (cVolta) cVolta.innerHTML = '';
   adicionarVoo('ida');
   adicionarVoo('volta');
   calcularTotal();
   carregarLista();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-// ── STORAGE ───────────────────────────────────────────────
 
 function obterLista() {
   try {
@@ -424,8 +431,6 @@ function obterLista() {
 function gravarLista(lista) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 }
-
-// ── SALVAR ────────────────────────────────────────────────
 
 function salvarOrcamento() {
   var d = lerFormulario();
@@ -455,8 +460,6 @@ function salvarOrcamento() {
   carregarLista();
 }
 
-// ── DUPLICAR ──────────────────────────────────────────────
-
 function duplicarOrcamento() {
   var d = lerFormulario();
   if (!d.destino) {
@@ -469,8 +472,6 @@ function duplicarOrcamento() {
   alert('Orcamento duplicado! Edite e salve como novo.');
 }
 
-// ── EXCLUIR ───────────────────────────────────────────────
-
 function excluirOrcamento(id) {
   var lista = obterLista();
   var nova  = [];
@@ -482,8 +483,6 @@ function excluirOrcamento(id) {
   else carregarLista();
 }
 
-// ── BUSCA ─────────────────────────────────────────────────
-
 function filtrarLista() {
   var el    = document.getElementById('campoBusca');
   var termo = el ? el.value.toLowerCase() : '';
@@ -494,16 +493,15 @@ function filtrarLista() {
   }
 }
 
-// ── LISTA SIDEBAR ─────────────────────────────────────────
-
 function carregarLista() {
   var lista = obterLista();
   var ul    = document.getElementById('listaOrcamentos');
   var cnt   = document.getElementById('sidebarCount');
+  if (!ul) return;
   ul.innerHTML = '';
   if (cnt) cnt.textContent = lista.length;
 
-  if (!lista.length) {
+  if (lista.length === 0) {
     var li = document.createElement('li');
     li.textContent   = 'Nenhum orcamento salvo ainda.';
     li.style.cssText = 'font-size:.85rem;color:#666;padding:6px 2px;';
@@ -521,6 +519,7 @@ function criarItemLista(ul, orc) {
   var hoje = new Date().toISOString().slice(0, 10);
   var li   = document.createElement('li');
   li.className = 'orcamento-item';
+  li.setAttribute('data-id', String(orc.id));
   if (orc.id === estadoAtual.id) li.className += ' ativo';
   if (orc.validade) {
     li.style.borderLeft = (orc.validade < hoje)
@@ -555,7 +554,7 @@ function criarItemLista(ul, orc) {
   del.title         = 'Excluir';
   del.style.cssText =
     'border:none;background:transparent;cursor:pointer;' +
-    'font-size:12px;padding:0 4px;color:#c0392b;font-weight:700;';
+    'font-size:13px;color:#c0392b;padding:0 2px;flex-shrink:0;';
 
   (function (oid, onum) {
     del.onclick = function (e) {
@@ -570,7 +569,7 @@ function criarItemLista(ul, orc) {
   topo.appendChild(del);
 
   var meta = document.createElement('div');
-  meta.style.cssText = 'font-size:0.74rem;color:#888;margin-top:3px;';
+  meta.style.cssText = 'font-size:0.78rem;color:#666;margin-top:3px;';
   var partes = [];
   if (orc.dataOrcamento) {
     var dp = orc.dataOrcamento.split('-');
@@ -578,38 +577,32 @@ function criarItemLista(ul, orc) {
   }
   if (orc.periodo)       partes.push(orc.periodo);
   if (orc.numeroPessoas) partes.push(orc.numeroPessoas + ' pax');
-  meta.textContent = partes.length ? partes.join(' | ') : '-';
+  meta.textContent = partes.join(' | ') || '-';
 
   li.appendChild(topo);
   li.appendChild(meta);
 
-  (function (oid, onum, orcamento) {
-    li.onclick = function () {
-      preencherFormulario(orcamento);
-      estadoAtual.id     = oid;
-      estadoAtual.numero = onum;
-      if (onum) mostrarBadge(onum);
-      var items = document.querySelectorAll('.orcamento-item');
-      for (var j = 0; j < items.length; j++) {
-        items[j].className = 'orcamento-item';
-        if (items[j].style.borderLeft) {
-          var hoje2 = new Date().toISOString().slice(0, 10);
-          if (orcamento.validade) {
-            items[j].style.borderLeft =
-              (orcamento.validade < hoje2)
-                ? '4px solid #c0392b' : '4px solid #2c8c3a';
-          }
-        }
-      }
-      li.className = 'orcamento-item ativo';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-  })(orc.id, orc.numero, orc);
+  (function (oid) {
+    li.onclick = function () { carregarOrcamento(oid); };
+  })(orc.id);
 
   ul.appendChild(li);
 }
 
-// ── IMAGENS BASE64 ────────────────────────────────────────
+function carregarOrcamento(id) {
+  var lista = obterLista();
+  for (var i = 0; i < lista.length; i++) {
+    if (lista[i].id === id) {
+      estadoAtual.id     = lista[i].id;
+      estadoAtual.numero = lista[i].numero;
+      preencherFormulario(lista[i]);
+      mostrarBadge(lista[i].numero);
+      carregarLista();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+  }
+}
 
 function imgBase64(src) {
   return new Promise(function (resolve) {
@@ -628,8 +621,6 @@ function imgBase64(src) {
     img.src = src + '?v=' + Date.now();
   });
 }
-
-// ── GERAR PDF ─────────────────────────────────────────────
 
 function gerarPDF() {
   var d = lerFormulario();
@@ -661,11 +652,7 @@ function _buildPDF(d, logoB, seloB) {
     doc.setTextColor(40, 40, 40);
   }
 
-  function chk(n) { if (y + n > RBOT) novaPag(); }
-
-  function novaPag() {
-    doc.addPage(); cabecalho(); rst(); y = HEND + 6;
-  }
+  function chk(n) { if (y + n > RBOT) { doc.addPage(); cabecalho(); rst(); y = HEND + 6; } }
 
   function cabecalho() {
     doc.setFillColor(245, 245, 245);
@@ -808,7 +795,7 @@ function _buildPDF(d, logoB, seloB) {
   }
 
   function blocoVoo(titulo, lista) {
-    if (!lista || !lista.length) return;
+    if (!lista || lista.length === 0) return;
     chk(14);
     doc.setFillColor(230, 240, 255);
     doc.roundedRect(ML, y - 4.5, TW, 9, 2, 2, 'F');
@@ -820,21 +807,22 @@ function _buildPDF(d, logoB, seloB) {
     rst();
 
     for (var v = 0; v < lista.length; v++) {
-      var voo = lista[v];
+      var voo  = lista[v];
+      var col1 = ML;
+      var col2 = ML + TW / 2 + 4;
+
       if (lista.length > 1) {
         chk(7);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8.5);
         doc.setTextColor(80, 80, 80);
-        doc.text((v === 0 ? 'Trecho 1' : 'Conexao ' + v) +
-                 (voo.origem && voo.destino ?
-                   '  ' + voo.origem + '  ->  ' + voo.destino : ''),
-                 ML + 2, y);
+        var trechoTxt = (v === 0) ? 'Trecho 1' : 'Conexao ' + v;
+        if (voo.origem && voo.destino) {
+          trechoTxt = trechoTxt + '  ' + voo.origem + '  ->  ' + voo.destino;
+        }
+        doc.text(trechoTxt, ML + 2, y);
         y += 6;
       }
-
-      var col1 = ML;
-      var col2 = ML + TW / 2 + 4;
 
       if (voo.cia || voo.numero) {
         chk(6);
@@ -908,7 +896,7 @@ function _buildPDF(d, logoB, seloB) {
       }
 
       if (v < lista.length - 1) {
-        chk(6);
+        chk(8);
         doc.setDrawColor(180, 200, 230);
         doc.setLineWidth(0.3);
         doc.line(ML + 10, y, PW - MR - 10, y);
@@ -921,8 +909,6 @@ function _buildPDF(d, logoB, seloB) {
     }
     y += 4;
   }
-
-  // ── CONSTROI PDF ──────────────────────────────────────────
 
   cabecalho();
   rst();
@@ -986,20 +972,17 @@ function _buildPDF(d, logoB, seloB) {
   }
   y += 10;
 
-  // VOOS
-  var temIda   = d.voosIda   && d.voosIda.length;
-  var temVolta = d.voosVolta && d.voosVolta.length;
+  var temIda   = d.voosIda   && d.voosIda.length   > 0;
+  var temVolta = d.voosVolta && d.voosVolta.length  > 0;
   if (temIda || temVolta) {
     sec('INFORMACOES DE VOO');
     if (temIda)   blocoVoo('VOO DE IDA',   d.voosIda);
     if (temVolta) blocoVoo('VOO DE VOLTA', d.voosVolta);
   }
 
-  // ROTEIRO
   sec('ROTEIRO / PROGRAMACAO DA VIAGEM');
   bloco(d.roteiro, 5);
 
-  // INVESTIMENTO
   sec('INVESTIMENTO');
   campo('Valor por pessoa:', d.precoPorPessoa);
   if (d.ocupacao) campo('Base de ocupacao:', d.ocupacao);
@@ -1011,7 +994,8 @@ function _buildPDF(d, logoB, seloB) {
 
   if (taxa > 0) campo('Taxa de embarque por pessoa:', brFmt(taxa));
   if (out  > 0) {
-    var descOut = d.outrasTaxasDesc ? d.outrasTaxasDesc : 'Outras taxas';
+    var descOut = (d.outrasTaxasDesc && d.outrasTaxasDesc.length > 0)
+      ? d.outrasTaxasDesc : 'Outras taxas';
     campo(descOut + ' por pessoa:', brFmt(out));
   }
 
@@ -1041,18 +1025,17 @@ function _buildPDF(d, logoB, seloB) {
   }
   y += 2;
 
-  // PAGAMENTO
   sec('FORMA DE PAGAMENTO');
   var entradaV  = toFloat(d.entrada);
   var parcelasV = parseInt(d.numeroParcelas, 10);
   if (totalPP > 0 && parcelasV > 0) {
+    var vlParcela = 0;
     if (entradaV > 0) {
-      var restante  = totalPP - entradaV;
-      var vlParcela = restante / parcelasV;
+      vlParcela = (totalPP - entradaV) / parcelasV;
       campo('Entrada por pessoa:', brFmt(entradaV));
       campo(parcelasV + ' parcelas de:', brFmt(vlParcela));
     } else {
-      var vlParcela = totalPP / parcelasV;
+      vlParcela = totalPP / parcelasV;
       campo(parcelasV + ' parcelas de:', brFmt(vlParcela));
     }
     campo('Total por pessoa:', brFmt(totalPP));
@@ -1061,25 +1044,21 @@ function _buildPDF(d, logoB, seloB) {
   if (d.pagamento) bloco(d.pagamento, 3);
   y += 2;
 
-  // INCLUI / NAO INCLUI
   if (d.inclui || d.naoInclui) {
     blocoDuplo('O PACOTE INCLUI', d.inclui, 'NAO INCLUI', d.naoInclui);
   }
 
-  // OBSERVACOES
   if (d.observacoes) {
     sec('OBSERVACOES / CONDICOES GERAIS');
     bloco(d.observacoes, 5);
   }
 
-  // RODAPE EM TODAS AS PAGINAS
   var tot = doc.getNumberOfPages();
   for (var p = 1; p <= tot; p++) {
     doc.setPage(p);
     rodape(p, tot);
   }
 
-  // SALVAR
   var nd  = limparNome(d.destino || 'Oficina');
   var nc  = limparNome(d.cliente || '');
   if (nc.length > 20) nc = nc.slice(0, 20);
