@@ -8,7 +8,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-
 <div class="app-container">
 
   <header class="app-header">
@@ -43,7 +42,6 @@
 
       <h2>Dados do Orcamento</h2>
 
-      <!-- CLIENTE -->
       <div class="field-row">
         <div class="field-group">
           <label for="cliente">Nome do cliente</label>
@@ -93,109 +91,45 @@
       </div>
 
       <!-- VOOS -->
-      <div style="margin:18px 0 6px 0;">
+      <div style="margin:20px 0 8px 0;display:flex;align-items:center;gap:10px;">
         <strong style="color:#1e4a7d;font-size:1rem;">
           Informacoes de Voo (opcional)
         </strong>
       </div>
 
-      <div style="border:1.5px solid #dde3ea;border-radius:8px;
-                  padding:14px;margin-bottom:10px;">
-        <div style="font-size:0.8rem;font-weight:700;color:#1e4a7d;
-                    margin-bottom:8px;text-transform:uppercase;">
-          Voo de Ida
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="vooIdaCia">Cia Aerea</label>
-            <input type="text" id="vooIdaCia"
-                   placeholder="Ex: LATAM / GOL / Azul" />
-          </div>
-          <div class="field-group">
-            <label for="vooIdaNumero">N do Voo</label>
-            <input type="text" id="vooIdaNumero"
-                   placeholder="Ex: LA3042" />
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="vooIdaOrigem">Origem</label>
-            <input type="text" id="vooIdaOrigem"
-                   placeholder="Ex: Campinas (VCP)" />
-          </div>
-          <div class="field-group">
-            <label for="vooIdaDestino">Destino</label>
-            <input type="text" id="vooIdaDestino"
-                   placeholder="Ex: Recife (REC)" />
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="vooIdaPartida">Data / Hora de Partida</label>
-            <input type="text" id="vooIdaPartida"
-                   placeholder="Ex: 10/07/2025 - 06h30" />
-          </div>
-          <div class="field-group">
-            <label for="vooIdaChegada">Data / Hora de Chegada</label>
-            <input type="text" id="vooIdaChegada"
-                   placeholder="Ex: 10/07/2025 - 08h45" />
-          </div>
-        </div>
-        <div class="field-group">
-          <label for="vooIdaObs">Observacoes do voo de ida</label>
-          <input type="text" id="vooIdaObs"
-                 placeholder="Ex: Conexao em Sao Paulo (GRU)" />
+      <!-- VOOS DE IDA -->
+      <div style="margin-bottom:6px;">
+        <div style="background:#1e4a7d;color:#fff;font-size:0.82rem;
+                    font-weight:700;padding:6px 12px;border-radius:6px 6px 0 0;
+                    display:inline-block;">
+          VOOS DE IDA
         </div>
       </div>
+      <div id="containerVoosIda"></div>
+      <button type="button" id="btnAddVooIda"
+              style="margin-bottom:16px;padding:6px 14px;
+                     background:#e8f0fb;border:1.5px solid #1e4a7d;
+                     color:#1e4a7d;border-radius:6px;cursor:pointer;
+                     font-size:0.85rem;font-weight:600;">
+        + Adicionar Conexao de Ida
+      </button>
 
-      <div style="border:1.5px solid #dde3ea;border-radius:8px;
-                  padding:14px;margin-bottom:10px;">
-        <div style="font-size:0.8rem;font-weight:700;color:#1e4a7d;
-                    margin-bottom:8px;text-transform:uppercase;">
-          Voo de Volta
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="vooVoltaCia">Cia Aerea</label>
-            <input type="text" id="vooVoltaCia"
-                   placeholder="Ex: LATAM / GOL / Azul" />
-          </div>
-          <div class="field-group">
-            <label for="vooVoltaNumero">N do Voo</label>
-            <input type="text" id="vooVoltaNumero"
-                   placeholder="Ex: LA3043" />
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="vooVoltaOrigem">Origem</label>
-            <input type="text" id="vooVoltaOrigem"
-                   placeholder="Ex: Recife (REC)" />
-          </div>
-          <div class="field-group">
-            <label for="vooVoltaDestino">Destino</label>
-            <input type="text" id="vooVoltaDestino"
-                   placeholder="Ex: Campinas (VCP)" />
-          </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
-            <label for="vooVoltaPartida">Data / Hora de Partida</label>
-            <input type="text" id="vooVoltaPartida"
-                   placeholder="Ex: 15/07/2025 - 18h00" />
-          </div>
-          <div class="field-group">
-            <label for="vooVoltaChegada">Data / Hora de Chegada</label>
-            <input type="text" id="vooVoltaChegada"
-                   placeholder="Ex: 15/07/2025 - 20h15" />
-          </div>
-        </div>
-        <div class="field-group">
-          <label for="vooVoltaObs">Observacoes do voo de volta</label>
-          <input type="text" id="vooVoltaObs"
-                 placeholder="Ex: Conexao em Sao Paulo (GRU)" />
+      <!-- VOOS DE VOLTA -->
+      <div style="margin-bottom:6px;">
+        <div style="background:#2c8c3a;color:#fff;font-size:0.82rem;
+                    font-weight:700;padding:6px 12px;border-radius:6px 6px 0 0;
+                    display:inline-block;">
+          VOOS DE VOLTA
         </div>
       </div>
+      <div id="containerVoosVolta"></div>
+      <button type="button" id="btnAddVooVolta"
+              style="margin-bottom:20px;padding:6px 14px;
+                     background:#e8f5e9;border:1.5px solid #2c8c3a;
+                     color:#2c8c3a;border-radius:6px;cursor:pointer;
+                     font-size:0.85rem;font-weight:600;">
+        + Adicionar Conexao de Volta
+      </button>
 
       <!-- ROTEIRO -->
       <div class="field-group">
@@ -245,20 +179,16 @@
       <div style="background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
                   border:2px solid #2c8c3a;border-radius:8px;
                   padding:14px 16px;margin:10px 0;">
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-                    margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:14px;
+                    flex-wrap:wrap;margin-bottom:6px;">
           <span style="font-size:0.78rem;font-weight:700;color:#1e4a7d;
-                       text-transform:uppercase;letter-spacing:0.05em;">
-            Total por pessoa
-          </span>
+                       text-transform:uppercase;">Total por pessoa</span>
           <span id="totalPorPessoa"
                 style="font-size:1.1rem;font-weight:800;color:#1e4a7d;">-</span>
         </div>
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
           <span style="font-size:0.78rem;font-weight:700;color:#1e4a7d;
-                       text-transform:uppercase;letter-spacing:0.05em;">
-            Total do grupo
-          </span>
+                       text-transform:uppercase;">Total do grupo</span>
           <span id="totalCalculado"
                 style="font-size:1.3rem;font-weight:800;color:#2c8c3a;">-</span>
           <span id="totalDetalhe"
@@ -293,7 +223,7 @@
       </div>
 
       <div class="field-group">
-        <label for="pagamento">Forma de pagamento (texto livre adicional)</label>
+        <label for="pagamento">Observacao de pagamento (opcional)</label>
         <textarea id="pagamento" rows="2"
           placeholder="Ex: Pagamento via PIX ou cartao de credito..."></textarea>
       </div>
@@ -303,7 +233,7 @@
         <div class="field-group">
           <label for="inclui">O pacote inclui</label>
           <textarea id="inclui" rows="4"
-            placeholder="Ex: Transporte, hospedagem com cafe da manha..."></textarea>
+            placeholder="Ex: Transporte, hospedagem..."></textarea>
         </div>
         <div class="field-group">
           <label for="naoInclui">Nao inclui</label>
@@ -316,7 +246,7 @@
       <div class="field-group">
         <label for="observacoes">Observacoes / condicoes gerais</label>
         <textarea id="observacoes" rows="4"
-          placeholder="Ex: Precos sujeitos a alteracao sem aviso previo..."></textarea>
+          placeholder="Ex: Precos sujeitos a alteracao..."></textarea>
       </div>
 
       <div class="actions">
@@ -337,9 +267,7 @@
           0
         </span>
       </h2>
-      <p class="sidebar-hint">
-        Clique para carregar &middot; X para excluir
-      </p>
+      <p class="sidebar-hint">Clique para carregar &middot; X para excluir</p>
       <input type="text" id="campoBusca"
              placeholder="Buscar orcamento..."
              oninput="filtrarLista()"
@@ -348,7 +276,6 @@
                     box-sizing:border-box;" />
       <ul class="orcamentos-list" id="listaOrcamentos"></ul>
     </aside>
-
   </div>
 
   <footer class="app-footer">
@@ -365,7 +292,6 @@
   </footer>
 
 </div>
-
 <script src="script.js"></script>
 </body>
 </html>
