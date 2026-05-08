@@ -27,7 +27,6 @@
   </header>
 
   <div class="main-content">
-
     <section class="form-section">
 
       <div id="numeroBadge"
@@ -44,6 +43,7 @@
 
       <h2>Dados do Orcamento</h2>
 
+      <!-- CLIENTE -->
       <div class="field-row">
         <div class="field-group">
           <label for="cliente">Nome do cliente</label>
@@ -92,15 +92,126 @@
         </div>
       </div>
 
+      <!-- VOOS -->
+      <div style="margin:18px 0 6px 0;">
+        <strong style="color:#1e4a7d;font-size:1rem;">
+          Informacoes de Voo (opcional)
+        </strong>
+      </div>
+
+      <div style="border:1.5px solid #dde3ea;border-radius:8px;
+                  padding:14px;margin-bottom:10px;">
+        <div style="font-size:0.8rem;font-weight:700;color:#1e4a7d;
+                    margin-bottom:8px;text-transform:uppercase;">
+          Voo de Ida
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="vooIdaCia">Cia Aerea</label>
+            <input type="text" id="vooIdaCia"
+                   placeholder="Ex: LATAM / GOL / Azul" />
+          </div>
+          <div class="field-group">
+            <label for="vooIdaNumero">N do Voo</label>
+            <input type="text" id="vooIdaNumero"
+                   placeholder="Ex: LA3042" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="vooIdaOrigem">Origem</label>
+            <input type="text" id="vooIdaOrigem"
+                   placeholder="Ex: Campinas (VCP)" />
+          </div>
+          <div class="field-group">
+            <label for="vooIdaDestino">Destino</label>
+            <input type="text" id="vooIdaDestino"
+                   placeholder="Ex: Recife (REC)" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="vooIdaPartida">Data / Hora de Partida</label>
+            <input type="text" id="vooIdaPartida"
+                   placeholder="Ex: 10/07/2025 - 06h30" />
+          </div>
+          <div class="field-group">
+            <label for="vooIdaChegada">Data / Hora de Chegada</label>
+            <input type="text" id="vooIdaChegada"
+                   placeholder="Ex: 10/07/2025 - 08h45" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="vooIdaObs">Observacoes do voo de ida</label>
+          <input type="text" id="vooIdaObs"
+                 placeholder="Ex: Conexao em Sao Paulo (GRU)" />
+        </div>
+      </div>
+
+      <div style="border:1.5px solid #dde3ea;border-radius:8px;
+                  padding:14px;margin-bottom:10px;">
+        <div style="font-size:0.8rem;font-weight:700;color:#1e4a7d;
+                    margin-bottom:8px;text-transform:uppercase;">
+          Voo de Volta
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="vooVoltaCia">Cia Aerea</label>
+            <input type="text" id="vooVoltaCia"
+                   placeholder="Ex: LATAM / GOL / Azul" />
+          </div>
+          <div class="field-group">
+            <label for="vooVoltaNumero">N do Voo</label>
+            <input type="text" id="vooVoltaNumero"
+                   placeholder="Ex: LA3043" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="vooVoltaOrigem">Origem</label>
+            <input type="text" id="vooVoltaOrigem"
+                   placeholder="Ex: Recife (REC)" />
+          </div>
+          <div class="field-group">
+            <label for="vooVoltaDestino">Destino</label>
+            <input type="text" id="vooVoltaDestino"
+                   placeholder="Ex: Campinas (VCP)" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-group">
+            <label for="vooVoltaPartida">Data / Hora de Partida</label>
+            <input type="text" id="vooVoltaPartida"
+                   placeholder="Ex: 15/07/2025 - 18h00" />
+          </div>
+          <div class="field-group">
+            <label for="vooVoltaChegada">Data / Hora de Chegada</label>
+            <input type="text" id="vooVoltaChegada"
+                   placeholder="Ex: 15/07/2025 - 20h15" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="vooVoltaObs">Observacoes do voo de volta</label>
+          <input type="text" id="vooVoltaObs"
+                 placeholder="Ex: Conexao em Sao Paulo (GRU)" />
+        </div>
+      </div>
+
+      <!-- ROTEIRO -->
       <div class="field-group">
         <label for="roteiro">Roteiro / descricao completo</label>
         <textarea id="roteiro" rows="10"
           placeholder="DIA 01 - Embarque as 06h00..."></textarea>
       </div>
 
+      <!-- VALORES -->
+      <div style="margin:18px 0 6px 0;">
+        <strong style="color:#1e4a7d;font-size:1rem;">Valores</strong>
+      </div>
+
       <div class="field-row">
         <div class="field-group">
-          <label for="precoPorPessoa">Valor por pessoa</label>
+          <label for="precoPorPessoa">Valor por pessoa (R$)</label>
           <input type="text" id="precoPorPessoa"
                  placeholder="Ex: 2500,00" />
         </div>
@@ -111,26 +222,83 @@
         </div>
       </div>
 
-      <div style="background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
-                  border:2px solid #2c8c3a;border-radius:8px;
-                  padding:10px 16px;margin:10px 0;
-                  display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-        <span style="font-size:0.78rem;font-weight:700;color:#1e4a7d;
-                     text-transform:uppercase;letter-spacing:0.05em;">
-          Total do grupo
-        </span>
-        <span id="totalCalculado"
-              style="font-size:1.3rem;font-weight:800;color:#2c8c3a;">-</span>
-        <span id="totalDetalhe"
-              style="font-size:0.8rem;color:#666;margin-left:auto;"></span>
+      <div class="field-row">
+        <div class="field-group">
+          <label for="taxaEmbarque">Taxa de embarque por pessoa (R$)</label>
+          <input type="text" id="taxaEmbarque"
+                 placeholder="Ex: 86,00" />
+        </div>
+        <div class="field-group">
+          <label for="outrasTaxas">Outras taxas por pessoa (R$)</label>
+          <input type="text" id="outrasTaxas"
+                 placeholder="Ex: 45,00" />
+        </div>
       </div>
 
       <div class="field-group">
-        <label for="pagamento">Forma de pagamento detalhada</label>
-        <textarea id="pagamento" rows="3"
-          placeholder="Ex: Entrada de R$ 500,00 + 5x de R$ 400,00..."></textarea>
+        <label for="outrasTaxasDesc">Descricao das outras taxas</label>
+        <input type="text" id="outrasTaxasDesc"
+               placeholder="Ex: Taxa de preservacao ambiental" />
       </div>
 
+      <!-- CAIXA TOTAL -->
+      <div style="background:linear-gradient(90deg,#e8f5e9,#e8f0fb);
+                  border:2px solid #2c8c3a;border-radius:8px;
+                  padding:14px 16px;margin:10px 0;">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+                    margin-bottom:6px;">
+          <span style="font-size:0.78rem;font-weight:700;color:#1e4a7d;
+                       text-transform:uppercase;letter-spacing:0.05em;">
+            Total por pessoa
+          </span>
+          <span id="totalPorPessoa"
+                style="font-size:1.1rem;font-weight:800;color:#1e4a7d;">-</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <span style="font-size:0.78rem;font-weight:700;color:#1e4a7d;
+                       text-transform:uppercase;letter-spacing:0.05em;">
+            Total do grupo
+          </span>
+          <span id="totalCalculado"
+                style="font-size:1.3rem;font-weight:800;color:#2c8c3a;">-</span>
+          <span id="totalDetalhe"
+                style="font-size:0.8rem;color:#666;margin-left:auto;"></span>
+        </div>
+      </div>
+
+      <!-- PAGAMENTO -->
+      <div style="margin:18px 0 6px 0;">
+        <strong style="color:#1e4a7d;font-size:1rem;">Forma de Pagamento</strong>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label for="entrada">Entrada por pessoa (R$) - opcional</label>
+          <input type="text" id="entrada"
+                 placeholder="Ex: 500,00 (deixe vazio se nao houver)" />
+        </div>
+        <div class="field-group">
+          <label for="numeroParcelas">N de parcelas</label>
+          <input type="number" id="numeroParcelas"
+                 placeholder="Ex: 5" min="1" />
+        </div>
+      </div>
+
+      <div style="background:#f0f4ff;border:1.5px solid #b0c4ef;
+                  border-radius:8px;padding:12px 16px;margin:8px 0;">
+        <div id="resumoPagamento"
+             style="font-size:0.9rem;color:#1e4a7d;font-weight:500;">
+          Preencha os campos acima para calcular o parcelamento.
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="pagamento">Forma de pagamento (texto livre adicional)</label>
+        <textarea id="pagamento" rows="2"
+          placeholder="Ex: Pagamento via PIX ou cartao de credito..."></textarea>
+      </div>
+
+      <!-- INCLUI / NAO INCLUI -->
       <div class="field-row">
         <div class="field-group">
           <label for="inclui">O pacote inclui</label>
@@ -144,6 +312,7 @@
         </div>
       </div>
 
+      <!-- OBSERVACOES -->
       <div class="field-group">
         <label for="observacoes">Observacoes / condicoes gerais</label>
         <textarea id="observacoes" rows="4"
@@ -169,13 +338,14 @@
         </span>
       </h2>
       <p class="sidebar-hint">
-        Clique para carregar &middot; use o icone para excluir
+        Clique para carregar &middot; X para excluir
       </p>
       <input type="text" id="campoBusca"
              placeholder="Buscar orcamento..."
              oninput="filtrarLista()"
              style="width:100%;padding:7px 10px;border:1.5px solid #dde3ea;
-                    border-radius:6px;font-size:0.88rem;margin-bottom:8px;" />
+                    border-radius:6px;font-size:0.88rem;margin-bottom:8px;
+                    box-sizing:border-box;" />
       <ul class="orcamentos-list" id="listaOrcamentos"></ul>
     </aside>
 
@@ -191,7 +361,6 @@
       <img src="selo30anos.png" alt="30 anos"
            style="height:48px;width:auto;opacity:0.9;"
            onerror="this.style.display='none'" />
-      <span class="experience-text">30 anos de experiencia</span>
     </div>
   </footer>
 
