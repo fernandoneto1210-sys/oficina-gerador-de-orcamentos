@@ -21,8 +21,8 @@ window.addEventListener('load', function () {
   if (elData) elData.value = new Date().toISOString().slice(0, 10);
 
   var calcIds = [
-    'numeroPessoas', 'precoPorPessoa', 'taxaEmbarque',
-    'outrasTaxas', 'entrada', 'numeroParcelas'
+    'numeroPessoas','precoPorPessoa','taxaEmbarque',
+    'outrasTaxas','entrada','numeroParcelas'
   ];
   for (var i = 0; i < calcIds.length; i++) {
     var el = document.getElementById(calcIds[i]);
@@ -33,6 +33,8 @@ window.addEventListener('load', function () {
   adicionarVoo('volta');
   carregarLista();
 });
+
+// ── VOOS ──────────────────────────────────────────────────
 
 function adicionarVoo(tipo) {
   vooIdxCtrl++;
@@ -78,27 +80,34 @@ function adicionarVoo(tipo) {
   cabec.appendChild(btnRem);
   div.appendChild(cabec);
 
+  // CAMPOS — data e hora SEPARADOS para partida e chegada
   var linhas = [
     [
-      { id: 'cia',     label: 'Cia Aerea',
+      { id: 'cia',            label: 'Cia Aerea',
         ph: 'Ex: LATAM / GOL / Azul' },
-      { id: 'numero',  label: 'N do Voo',
+      { id: 'numero',         label: 'N do Voo',
         ph: 'Ex: LA3042' }
     ],
     [
-      { id: 'origem',  label: 'Origem',
+      { id: 'origem',         label: 'Origem',
         ph: 'Ex: Campinas (VCP)' },
-      { id: 'destino', label: 'Destino',
+      { id: 'destino',        label: 'Destino',
         ph: 'Ex: Recife (REC)' }
     ],
     [
-      { id: 'partida', label: 'Data e Hora Partida',
-        ph: 'Ex: 10/07/2025 - 06h30' },
-      { id: 'chegada', label: 'Data e Hora Chegada',
-        ph: 'Ex: 10/07/2025 - 08h45' }
+      { id: 'dataPartida',    label: 'Data de Partida',
+        ph: 'Ex: 10/07/2025', tipo: 'text' },
+      { id: 'horaPartida',    label: 'Hora de Partida',
+        ph: 'Ex: 06h30',      tipo: 'text' }
     ],
     [
-      { id: 'obs', label: 'Observacao',
+      { id: 'dataChegada',    label: 'Data de Chegada',
+        ph: 'Ex: 10/07/2025', tipo: 'text' },
+      { id: 'horaChegada',    label: 'Hora de Chegada',
+        ph: 'Ex: 08h45',      tipo: 'text' }
+    ],
+    [
+      { id: 'obs',            label: 'Observacao',
         ph: 'Ex: Conexao em GRU', full: true }
     ]
   ];
@@ -128,7 +137,8 @@ function adicionarVoo(tipo) {
       inp.placeholder = cf.ph;
       inp.style.cssText =
         'padding:6px 8px;border:1.5px solid #dde3ea;border-radius:6px;' +
-        'font-size:0.85rem;background:#fff;box-sizing:border-box;width:100%;';
+        'font-size:0.85rem;background:#fff;' +
+        'box-sizing:border-box;width:100%;';
 
       fg.appendChild(lbl);
       fg.appendChild(inp);
@@ -158,16 +168,19 @@ function lerVoos(tipo) {
   for (var i = 0; i < arr.length; i++) {
     var idx = arr[i].idx;
     var obj = {
-      cia:     gvEl('voo_' + tipo + '_' + idx + '_cia'),
-      numero:  gvEl('voo_' + tipo + '_' + idx + '_numero'),
-      origem:  gvEl('voo_' + tipo + '_' + idx + '_origem'),
-      destino: gvEl('voo_' + tipo + '_' + idx + '_destino'),
-      partida: gvEl('voo_' + tipo + '_' + idx + '_partida'),
-      chegada: gvEl('voo_' + tipo + '_' + idx + '_chegada'),
-      obs:     gvEl('voo_' + tipo + '_' + idx + '_obs')
+      cia:         gvEl('voo_' + tipo + '_' + idx + '_cia'),
+      numero:      gvEl('voo_' + tipo + '_' + idx + '_numero'),
+      origem:      gvEl('voo_' + tipo + '_' + idx + '_origem'),
+      destino:     gvEl('voo_' + tipo + '_' + idx + '_destino'),
+      dataPartida: gvEl('voo_' + tipo + '_' + idx + '_dataPartida'),
+      horaPartida: gvEl('voo_' + tipo + '_' + idx + '_horaPartida'),
+      dataChegada: gvEl('voo_' + tipo + '_' + idx + '_dataChegada'),
+      horaChegada: gvEl('voo_' + tipo + '_' + idx + '_horaChegada'),
+      obs:         gvEl('voo_' + tipo + '_' + idx + '_obs')
     };
-    var tem = obj.cia || obj.numero || obj.origem ||
-              obj.destino || obj.partida || obj.chegada || obj.obs;
+    var tem = obj.cia || obj.numero || obj.origem || obj.destino ||
+              obj.dataPartida || obj.horaPartida ||
+              obj.dataChegada || obj.horaChegada || obj.obs;
     if (tem) res.push(obj);
   }
   return res;
@@ -195,13 +208,20 @@ function preencherVoos(tipo, lista) {
     var arr = (tipo === 'ida') ? voosIda : voosVolta;
     var idx = arr[arr.length - 1].idx;
     var v   = lista[i];
-    var cs  = ['cia','numero','origem','destino','partida','chegada','obs'];
+    var cs  = [
+      'cia','numero','origem','destino',
+      'dataPartida','horaPartida',
+      'dataChegada','horaChegada','obs'
+    ];
     for (var j = 0; j < cs.length; j++) {
-      var el = document.getElementById('voo_' + tipo + '_' + idx + '_' + cs[j]);
+      var el = document.getElementById(
+        'voo_' + tipo + '_' + idx + '_' + cs[j]);
       if (el && v[cs[j]]) el.value = v[cs[j]];
     }
   }
 }
+
+// ── UTILITARIOS — ZERO REGEX COM ACENTO ───────────────────
 
 function proximoNumero() {
   var n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
@@ -277,6 +297,8 @@ function ocultarBadge() {
   estadoAtual = { id: null, numero: null };
 }
 
+// ── CALCULADORA ───────────────────────────────────────────
+
 function calcularTotal() {
   var np       = parseInt(gv('numeroPessoas'), 10);
   var pp       = toFloat(gv('precoPorPessoa'));
@@ -329,6 +351,8 @@ function calcularTotal() {
     }
   }
 }
+
+// ── FORMULARIO ────────────────────────────────────────────
 
 function gv(id) {
   var el = document.getElementById(id);
@@ -421,6 +445,8 @@ function limparFormulario() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── STORAGE ───────────────────────────────────────────────
+
 function obterLista() {
   try {
     var raw = localStorage.getItem(STORAGE_KEY);
@@ -431,6 +457,8 @@ function obterLista() {
 function gravarLista(lista) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 }
+
+// ── SALVAR ────────────────────────────────────────────────
 
 function salvarOrcamento() {
   var d = lerFormulario();
@@ -460,6 +488,8 @@ function salvarOrcamento() {
   carregarLista();
 }
 
+// ── DUPLICAR ──────────────────────────────────────────────
+
 function duplicarOrcamento() {
   var d = lerFormulario();
   if (!d.destino) {
@@ -472,6 +502,8 @@ function duplicarOrcamento() {
   alert('Orcamento duplicado! Edite e salve como novo.');
 }
 
+// ── EXCLUIR ───────────────────────────────────────────────
+
 function excluirOrcamento(id) {
   var lista = obterLista();
   var nova  = [];
@@ -483,6 +515,8 @@ function excluirOrcamento(id) {
   else carregarLista();
 }
 
+// ── BUSCA ─────────────────────────────────────────────────
+
 function filtrarLista() {
   var el    = document.getElementById('campoBusca');
   var termo = el ? el.value.toLowerCase() : '';
@@ -493,15 +527,16 @@ function filtrarLista() {
   }
 }
 
+// ── LISTA SIDEBAR ─────────────────────────────────────────
+
 function carregarLista() {
   var lista = obterLista();
   var ul    = document.getElementById('listaOrcamentos');
   var cnt   = document.getElementById('sidebarCount');
-  if (!ul) return;
   ul.innerHTML = '';
   if (cnt) cnt.textContent = lista.length;
 
-  if (lista.length === 0) {
+  if (!lista.length) {
     var li = document.createElement('li');
     li.textContent   = 'Nenhum orcamento salvo ainda.';
     li.style.cssText = 'font-size:.85rem;color:#666;padding:6px 2px;';
@@ -509,7 +544,9 @@ function carregarLista() {
     return;
   }
 
-  var ordenada = lista.slice().sort(function (a, b) { return b.id - a.id; });
+  var ordenada = lista.slice().sort(function (a, b) {
+    return b.id - a.id;
+  });
   for (var i = 0; i < ordenada.length; i++) {
     criarItemLista(ul, ordenada[i]);
   }
@@ -523,7 +560,8 @@ function criarItemLista(ul, orc) {
   if (orc.id === estadoAtual.id) li.className += ' ativo';
   if (orc.validade) {
     li.style.borderLeft = (orc.validade < hoje)
-      ? '4px solid #c0392b' : '4px solid #2c8c3a';
+      ? '4px solid #c0392b'
+      : '4px solid #2c8c3a';
   }
 
   var topo = document.createElement('div');
@@ -532,7 +570,8 @@ function criarItemLista(ul, orc) {
     'justify-content:space-between;gap:6px;';
 
   var wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;';
+  wrap.style.cssText =
+    'display:flex;align-items:flex-start;gap:4px;flex:1;';
 
   if (orc.numero) {
     var numEl = document.createElement('span');
@@ -546,63 +585,60 @@ function criarItemLista(ul, orc) {
   var titulo = document.createElement('div');
   titulo.textContent =
     (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
-  titulo.style.cssText = 'font-size:0.87rem;font-weight:600;color:#222;';
+  titulo.style.cssText =
+    'font-size:0.87rem;font-weight:600;color:#222;';
   wrap.appendChild(titulo);
 
   var del = document.createElement('button');
   del.textContent   = 'X';
   del.title         = 'Excluir';
   del.style.cssText =
-    'border:none;background:transparent;cursor:pointer;' +
-    'font-size:13px;color:#c0392b;padding:0 2px;flex-shrink:0;';
-
-  (function (oid, onum) {
+    'background:none;border:none;color:#c0392b;' +
+    'font-weight:700;cursor:pointer;font-size:0.85rem;' +
+    'padding:0 2px;flex-shrink:0;';
+  (function (oid) {
     del.onclick = function (e) {
       e.stopPropagation();
-      if (confirm('Excluir orcamento N ' + fmt(onum || 0) + '?')) {
-        excluirOrcamento(oid);
-      }
+      if (confirm('Excluir este orcamento?')) excluirOrcamento(oid);
     };
-  })(orc.id, orc.numero);
+  })(orc.id);
 
   topo.appendChild(wrap);
   topo.appendChild(del);
-
-  var meta = document.createElement('div');
-  meta.style.cssText = 'font-size:0.78rem;color:#666;margin-top:3px;';
-  var partes = [];
-  if (orc.dataOrcamento) {
-    var dp = orc.dataOrcamento.split('-');
-    partes.push(dp[2] + '/' + dp[1] + '/' + dp[0]);
-  }
-  if (orc.periodo)       partes.push(orc.periodo);
-  if (orc.numeroPessoas) partes.push(orc.numeroPessoas + ' pax');
-  meta.textContent = partes.join(' | ') || '-';
-
   li.appendChild(topo);
-  li.appendChild(meta);
 
-  (function (oid) {
-    li.onclick = function () { carregarOrcamento(oid); };
-  })(orc.id);
+  var sub = document.createElement('div');
+  sub.style.cssText =
+    'font-size:0.75rem;color:#666;margin-top:3px;';
+  var partes = [];
+  if (orc.periodo)   partes.push(orc.periodo);
+  if (orc.vendedor)  partes.push(orc.vendedor);
+  if (orc.validade) {
+    var vp = orc.validade.split('-');
+    var vStr = 'Val: ' + vp[2] + '/' + vp[1] + '/' + vp[0];
+    if (orc.validade < hoje) vStr += ' (EXPIRADO)';
+    partes.push(vStr);
+  }
+  sub.textContent = partes.join(' | ');
+  li.appendChild(sub);
+
+  (function (o) {
+    li.onclick = function () { carregarOrcamento(o); };
+  })(orc);
 
   ul.appendChild(li);
 }
 
-function carregarOrcamento(id) {
-  var lista = obterLista();
-  for (var i = 0; i < lista.length; i++) {
-    if (lista[i].id === id) {
-      estadoAtual.id     = lista[i].id;
-      estadoAtual.numero = lista[i].numero;
-      preencherFormulario(lista[i]);
-      mostrarBadge(lista[i].numero);
-      carregarLista();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-  }
+function carregarOrcamento(orc) {
+  estadoAtual.id     = orc.id;
+  estadoAtual.numero = orc.numero;
+  preencherFormulario(orc);
+  mostrarBadge(orc.numero);
+  carregarLista();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// ── PDF ───────────────────────────────────────────────────
 
 function imgBase64(src) {
   return new Promise(function (resolve) {
@@ -610,11 +646,11 @@ function imgBase64(src) {
     img.crossOrigin = 'anonymous';
     img.onload = function () {
       try {
-        var c = document.createElement('canvas');
-        c.width  = img.naturalWidth  || 300;
-        c.height = img.naturalHeight || 300;
-        c.getContext('2d').drawImage(img, 0, 0);
-        resolve(c.toDataURL('image/png'));
+        var cv  = document.createElement('canvas');
+        cv.width  = img.naturalWidth;
+        cv.height = img.naturalHeight;
+        cv.getContext('2d').drawImage(img, 0, 0);
+        resolve(cv.toDataURL('image/png'));
       } catch (e) { resolve(null); }
     };
     img.onerror = function () { resolve(null); };
@@ -638,7 +674,9 @@ function gerarPDF() {
 
 function _buildPDF(d, logoB, seloB) {
   var jsPDF = window.jspdf.jsPDF;
-  var doc   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  var doc   = new jsPDF({
+    orientation: 'portrait', unit: 'mm', format: 'a4'
+  });
 
   var PW   = 210, PH = 297, ML = 18, MR = 18;
   var TW   = PW - ML - MR;
@@ -652,7 +690,14 @@ function _buildPDF(d, logoB, seloB) {
     doc.setTextColor(40, 40, 40);
   }
 
-  function chk(n) { if (y + n > RBOT) { doc.addPage(); cabecalho(); rst(); y = HEND + 6; } }
+  function chk(n) {
+    if (y + n > RBOT) {
+      doc.addPage();
+      cabecalho();
+      rst();
+      y = HEND + 6;
+    }
+  }
 
   function cabecalho() {
     doc.setFillColor(245, 245, 245);
@@ -818,7 +863,7 @@ function _buildPDF(d, logoB, seloB) {
         doc.setTextColor(80, 80, 80);
         var trechoTxt = (v === 0) ? 'Trecho 1' : 'Conexao ' + v;
         if (voo.origem && voo.destino) {
-          trechoTxt = trechoTxt + '  ' + voo.origem + '  ->  ' + voo.destino;
+          trechoTxt = trechoTxt + '  ' + voo.origem + ' -> ' + voo.destino;
         }
         doc.text(trechoTxt, ML + 2, y);
         y += 6;
@@ -866,7 +911,8 @@ function _buildPDF(d, logoB, seloB) {
         y += 7;
       }
 
-      if (voo.partida || voo.chegada) {
+      // PARTIDA — data e hora separados no PDF
+      if (voo.dataPartida || voo.horaPartida) {
         chk(6);
         doc.setFillColor(245, 248, 255);
         doc.rect(col1, y - 3, TW, 6.5, 'F');
@@ -876,13 +922,32 @@ function _buildPDF(d, logoB, seloB) {
         doc.text('Partida:', col1 + 2, y + 1);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(40, 40, 40);
-        doc.text(voo.partida || '-', col1 + 22, y + 1);
+        var txtPartida = '';
+        if (voo.dataPartida && voo.horaPartida) {
+          txtPartida = voo.dataPartida + ' as ' + voo.horaPartida;
+        } else {
+          txtPartida = voo.dataPartida || voo.horaPartida;
+        }
+        doc.text(txtPartida, col1 + 22, y + 1);
+        y += 7;
+      }
+
+      // CHEGADA — data e hora separados no PDF
+      if (voo.dataChegada || voo.horaChegada) {
+        chk(6);
         doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
         doc.setTextColor(30, 74, 125);
-        doc.text('Chegada:', col2, y + 1);
+        doc.text('Chegada:', col1 + 2, y + 1);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(40, 40, 40);
-        doc.text(voo.chegada || '-', col2 + 24, y + 1);
+        var txtChegada = '';
+        if (voo.dataChegada && voo.horaChegada) {
+          txtChegada = voo.dataChegada + ' as ' + voo.horaChegada;
+        } else {
+          txtChegada = voo.dataChegada || voo.horaChegada;
+        }
+        doc.text(txtChegada, col1 + 24, y + 1);
         y += 7;
       }
 
@@ -909,6 +974,8 @@ function _buildPDF(d, logoB, seloB) {
     }
     y += 4;
   }
+
+  // ── MONTA O PDF ───────────────────────────────────────────
 
   cabecalho();
   rst();
