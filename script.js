@@ -10,12 +10,14 @@ window.addEventListener('load', function () {
   document.getElementById('btnDuplicar').onclick = duplicarOrcamento;
 
   var elData = document.getElementById('dataOrcamento');
-  if (elData) elData.value = new Date().toISOString().split('T')[0];
+  if (elData) elData.value = new Date().toISOString().slice(0, 10);
 
-  var np = document.getElementById('numeroPessoas');
-  var pp = document.getElementById('precoPorPessoa');
-  if (np) np.addEventListener('input', calcularTotal);
-  if (pp) pp.addEventListener('input', calcularTotal);
+  var ids = ['numeroPessoas','precoPorPessoa','taxaEmbarque',
+             'outrasTaxas','entrada','numeroParcelas'];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (el) el.addEventListener('input', calcularTotal);
+  }
 
   carregarLista();
 });
@@ -33,27 +35,31 @@ function fmt(n) {
 }
 
 function brFmt(v) {
-  var partes = v.toFixed(2).split('.');
+  var partes  = v.toFixed(2).split('.');
   var inteiro = partes[0];
   var decimal = partes[1];
-  var resultado = '';
+  var res = '';
   var count = 0;
   for (var i = inteiro.length - 1; i >= 0; i--) {
-    if (count > 0 && count % 3 === 0) resultado = '.' + resultado;
-    resultado = inteiro[i] + resultado;
+    if (count > 0 && count % 3 === 0) res = '.' + res;
+    res = inteiro[i] + res;
     count++;
   }
-  return 'R$ ' + resultado + ',' + decimal;
+  return 'R$ ' + res + ',' + decimal;
 }
 
-function somenteNumeros(str) {
+function toFloat(str) {
+  if (!str) return 0;
   var r = '';
+  var temVirgula = false;
   for (var i = 0; i < str.length; i++) {
     var c = str[i];
     if (c >= '0' && c <= '9') r += c;
-    if (c === ',' || c === '.') r += c;
+    if (c === ',' && !temVirgula) { r += '.'; temVirgula = true; }
+    if (c === '.' && !temVirgula) { r += '.'; temVirgula = true; }
   }
-  return r;
+  var v = parseFloat(r);
+  return isNaN(v) ? 0 : v;
 }
 
 function limparNome(str) {
@@ -64,12 +70,12 @@ function limparNome(str) {
   for (var i = 0; i < str.length; i++) {
     if (ok.indexOf(str[i]) >= 0) r += str[i];
   }
-  var resultado = '';
+  var res = '';
   for (var i = 0; i < r.length; i++) {
-    resultado += (r[i] === ' ') ? '_' : r[i];
+    res += (r[i] === ' ') ? '_' : r[i];
   }
-  if (resultado.length > 25) resultado = resultado.slice(0, 25);
-  return resultado;
+  if (res.length > 25) res = res.slice(0, 25);
+  return res;
 }
 
 function mostrarBadge(numero) {
@@ -88,27 +94,59 @@ function ocultarBadge() {
 }
 
 function calcularTotal() {
-  var npEl  = document.getElementById('numeroPessoas');
-  var ppEl  = document.getElementById('precoPorPessoa');
-  var totEl = document.getElementById('totalCalculado');
-  var detEl = document.getElementById('totalDetalhe');
-  if (!npEl || !ppEl || !totEl) return;
+  var np       = parseInt(gv('numeroPessoas'), 10);
+  var pp       = toFloat(gv('precoPorPessoa'));
+  var taxa     = toFloat(gv('taxaEmbarque'));
+  var outras   = toFloat(gv('outrasTaxas'));
+  var entrada  = toFloat(gv('entrada'));
+  var parcelas = parseInt(gv('numeroParcelas'), 10);
 
-  var np  = parseInt(npEl.value, 10);
-  var raw = somenteNumeros(ppEl.value);
-  var pos = raw.indexOf(',');
-  if (pos >= 0) {
-    raw = raw.slice(0, pos) + '.' + raw.slice(pos + 1);
-  }
-  var pp = parseFloat(raw);
+  var totPP    = document.getElementById('totalPorPessoa');
+  var totEl    = document.getElementById('totalCalculado');
+  var detEl    = document.getElementById('totalDetalhe');
+  var resumoEl = document.getElementById('resumoPagamento');
 
-  if (isNaN(np) || np <= 0 || isNaN(pp) || pp <= 0) {
-    totEl.textContent = '-';
-    if (detEl) detEl.textContent = '';
+  if (!np || np <= 0 || pp <= 0) {
+    if (totPP)    totPP.textContent  = '-';
+    if (totEl)    totEl.textContent  = '-';
+    if (detEl)    detEl.textContent  = '';
+    if (resumoEl) resumoEl.textContent =
+      'Preencha os campos acima para calcular o parcelamento.';
     return;
   }
-  totEl.textContent = brFmt(np * pp);
-  if (detEl) detEl.textContent = np + ' pessoa(s) x ' + brFmt(pp);
+
+  var totalPessoa = pp + taxa + outras;
+  var totalGrupo  = totalPessoa * np;
+
+  if (totPP) totPP.textContent = brFmt(totalPessoa);
+  if (totEl) totEl.textContent = brFmt(totalGrupo);
+  if (detEl) detEl.textContent =
+    np + ' pess. x ' + brFmt(totalPessoa);
+
+  // calculo do parcelamento
+  if (resumoEl) {
+    if (parcelas > 0) {
+      var restante = totalPessoa;
+      var txt = '';
+      if (entrada > 0) {
+        restante = totalPessoa - entrada;
+        txt += 'Entrada: ' + brFmt(entrada) + ' por pessoa';
+        if (parcelas > 0 && restante > 0) {
+          var vlParcela = restante / parcelas;
+          txt += '  +  ' + parcelas + 'x de ' + brFmt(vlParcela) + ' por pessoa';
+        }
+      } else {
+        var vlParcela = totalPessoa / parcelas;
+        txt += parcelas + 'x de ' + brFmt(vlParcela) + ' por pessoa';
+      }
+      txt += '   |   Total por pessoa: ' + brFmt(totalPessoa);
+      txt += '   |   Total grupo: ' + brFmt(totalGrupo);
+      resumoEl.textContent = txt;
+    } else {
+      resumoEl.textContent =
+        'Informe o numero de parcelas para calcular o parcelamento.';
+    }
+  }
 }
 
 function gv(id) {
@@ -123,57 +161,80 @@ function sv(id, val) {
 
 function lerFormulario() {
   return {
-    id:             estadoAtual.id     || null,
-    numero:         estadoAtual.numero || null,
-    cliente:        gv('cliente'),
-    destino:        gv('destino'),
-    periodo:        gv('periodo'),
-    saida:          gv('saida'),
-    dataOrcamento:  gv('dataOrcamento'),
-    numeroPessoas:  gv('numeroPessoas'),
-    roteiro:        gv('roteiro'),
-    precoPorPessoa: gv('precoPorPessoa'),
-    ocupacao:       gv('ocupacao'),
-    pagamento:      gv('pagamento'),
-    observacoes:    gv('observacoes'),
-    validade:       gv('validade'),
-    vendedor:       gv('vendedor'),
-    inclui:         gv('inclui'),
-    naoInclui:      gv('naoInclui')
+    id:              estadoAtual.id     || null,
+    numero:          estadoAtual.numero || null,
+    cliente:         gv('cliente'),
+    destino:         gv('destino'),
+    periodo:         gv('periodo'),
+    saida:           gv('saida'),
+    dataOrcamento:   gv('dataOrcamento'),
+    numeroPessoas:   gv('numeroPessoas'),
+    validade:        gv('validade'),
+    vendedor:        gv('vendedor'),
+    roteiro:         gv('roteiro'),
+    precoPorPessoa:  gv('precoPorPessoa'),
+    ocupacao:        gv('ocupacao'),
+    taxaEmbarque:    gv('taxaEmbarque'),
+    outrasTaxas:     gv('outrasTaxas'),
+    outrasTaxasDesc: gv('outrasTaxasDesc'),
+    entrada:         gv('entrada'),
+    numeroParcelas:  gv('numeroParcelas'),
+    pagamento:       gv('pagamento'),
+    inclui:          gv('inclui'),
+    naoInclui:       gv('naoInclui'),
+    observacoes:     gv('observacoes'),
+    vooIdaCia:       gv('vooIdaCia'),
+    vooIdaNumero:    gv('vooIdaNumero'),
+    vooIdaOrigem:    gv('vooIdaOrigem'),
+    vooIdaDestino:   gv('vooIdaDestino'),
+    vooIdaPartida:   gv('vooIdaPartida'),
+    vooIdaChegada:   gv('vooIdaChegada'),
+    vooIdaObs:       gv('vooIdaObs'),
+    vooVoltaCia:     gv('vooVoltaCia'),
+    vooVoltaNumero:  gv('vooVoltaNumero'),
+    vooVoltaOrigem:  gv('vooVoltaOrigem'),
+    vooVoltaDestino: gv('vooVoltaDestino'),
+    vooVoltaPartida: gv('vooVoltaPartida'),
+    vooVoltaChegada: gv('vooVoltaChegada'),
+    vooVoltaObs:     gv('vooVoltaObs')
   };
 }
 
 function preencherFormulario(d) {
-  sv('cliente',        d.cliente);
-  sv('destino',        d.destino);
-  sv('periodo',        d.periodo);
-  sv('saida',          d.saida);
-  sv('dataOrcamento',  d.dataOrcamento);
-  sv('numeroPessoas',  d.numeroPessoas);
-  sv('roteiro',        d.roteiro);
-  sv('precoPorPessoa', d.precoPorPessoa);
-  sv('ocupacao',       d.ocupacao);
-  sv('pagamento',      d.pagamento);
-  sv('observacoes',    d.observacoes);
-  sv('validade',       d.validade);
-  sv('vendedor',       d.vendedor);
-  sv('inclui',         d.inclui);
-  sv('naoInclui',      d.naoInclui);
+  var campos = [
+    'cliente','destino','periodo','saida','dataOrcamento',
+    'numeroPessoas','validade','vendedor','roteiro',
+    'precoPorPessoa','ocupacao','taxaEmbarque','outrasTaxas',
+    'outrasTaxasDesc','entrada','numeroParcelas','pagamento',
+    'inclui','naoInclui','observacoes',
+    'vooIdaCia','vooIdaNumero','vooIdaOrigem','vooIdaDestino',
+    'vooIdaPartida','vooIdaChegada','vooIdaObs',
+    'vooVoltaCia','vooVoltaNumero','vooVoltaOrigem','vooVoltaDestino',
+    'vooVoltaPartida','vooVoltaChegada','vooVoltaObs'
+  ];
+  for (var i = 0; i < campos.length; i++) {
+    sv(campos[i], d[campos[i]]);
+  }
   calcularTotal();
 }
 
 function limparFormulario() {
   estadoAtual = { id: null, numero: null };
   ocultarBadge();
-  var ids = [
-    'cliente', 'destino', 'periodo', 'saida', 'dataOrcamento',
-    'numeroPessoas', 'roteiro', 'precoPorPessoa', 'ocupacao',
-    'pagamento', 'observacoes', 'validade', 'vendedor',
-    'inclui', 'naoInclui'
+  var campos = [
+    'cliente','destino','periodo','saida','dataOrcamento',
+    'numeroPessoas','validade','vendedor','roteiro',
+    'precoPorPessoa','ocupacao','taxaEmbarque','outrasTaxas',
+    'outrasTaxasDesc','entrada','numeroParcelas','pagamento',
+    'inclui','naoInclui','observacoes',
+    'vooIdaCia','vooIdaNumero','vooIdaOrigem','vooIdaDestino',
+    'vooIdaPartida','vooIdaChegada','vooIdaObs',
+    'vooVoltaCia','vooVoltaNumero','vooVoltaOrigem','vooVoltaDestino',
+    'vooVoltaPartida','vooVoltaChegada','vooVoltaObs'
   ];
-  for (var i = 0; i < ids.length; i++) sv(ids[i], '');
+  for (var i = 0; i < campos.length; i++) sv(campos[i], '');
   var elData = document.getElementById('dataOrcamento');
-  if (elData) elData.value = new Date().toISOString().split('T')[0];
+  if (elData) elData.value = new Date().toISOString().slice(0, 10);
   calcularTotal();
   carregarLista();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -197,7 +258,7 @@ function salvarOrcamento() {
     return;
   }
   var lista = obterLista();
-  var idx = -1;
+  var idx   = -1;
   for (var i = 0; i < lista.length; i++) {
     if (lista[i].id === d.id) { idx = i; break; }
   }
@@ -237,11 +298,8 @@ function excluirOrcamento(id) {
     if (lista[i].id !== id) nova.push(lista[i]);
   }
   gravarLista(nova);
-  if (id === estadoAtual.id) {
-    limparFormulario();
-  } else {
-    carregarLista();
-  }
+  if (id === estadoAtual.id) limparFormulario();
+  else carregarLista();
 }
 
 function filtrarLista() {
@@ -249,8 +307,8 @@ function filtrarLista() {
   var termo = el ? el.value.toLowerCase() : '';
   var items = document.querySelectorAll('.orcamento-item');
   for (var i = 0; i < items.length; i++) {
-    var txt = items[i].textContent.toLowerCase();
-    items[i].style.display = (txt.indexOf(termo) >= 0) ? '' : 'none';
+    items[i].style.display =
+      items[i].textContent.toLowerCase().indexOf(termo) >= 0 ? '' : 'none';
   }
 }
 
@@ -260,7 +318,6 @@ function carregarLista() {
   var cnt   = document.getElementById('sidebarCount');
   ul.innerHTML = '';
   if (cnt) cnt.textContent = lista.length;
-
   if (!lista.length) {
     var li = document.createElement('li');
     li.textContent   = 'Nenhum orcamento salvo ainda.';
@@ -268,11 +325,7 @@ function carregarLista() {
     ul.appendChild(li);
     return;
   }
-
-  var ordenada = lista.slice().sort(function (a, b) {
-    return b.id - a.id;
-  });
-
+  var ordenada = lista.slice().sort(function (a, b) { return b.id - a.id; });
   for (var i = 0; i < ordenada.length; i++) {
     criarItemLista(ul, ordenada[i]);
   }
@@ -280,23 +333,23 @@ function carregarLista() {
 
 function criarItemLista(ul, orc) {
   var hoje = new Date().toISOString().slice(0, 10);
-
-  var li = document.createElement('li');
+  var li   = document.createElement('li');
   li.className = 'orcamento-item';
   li.setAttribute('data-id', String(orc.id));
   if (orc.id === estadoAtual.id) li.className += ' ativo';
   if (orc.validade) {
     li.style.borderLeft = (orc.validade < hoje)
-      ? '4px solid #c0392b'
-      : '4px solid #2c8c3a';
+      ? '4px solid #c0392b' : '4px solid #2c8c3a';
   }
 
   var topo = document.createElement('div');
   topo.style.cssText =
-    'display:flex;align-items:flex-start;justify-content:space-between;gap:6px;';
+    'display:flex;align-items:flex-start;' +
+    'justify-content:space-between;gap:6px;';
 
   var wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;';
+  wrap.style.cssText =
+    'display:flex;align-items:flex-start;gap:4px;flex:1;';
 
   if (orc.numero) {
     var numEl = document.createElement('span');
@@ -310,15 +363,16 @@ function criarItemLista(ul, orc) {
   var titulo = document.createElement('div');
   titulo.textContent =
     (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
-  titulo.style.cssText = 'font-size:0.87rem;font-weight:600;color:#222;';
+  titulo.style.cssText =
+    'font-size:0.87rem;font-weight:600;color:#222;';
   wrap.appendChild(titulo);
 
   var del = document.createElement('button');
-  del.textContent = 'X';
-  del.title       = 'Excluir';
+  del.textContent   = 'X';
+  del.title         = 'Excluir';
   del.style.cssText =
     'border:none;background:transparent;cursor:pointer;' +
-    'font-size:12px;padding:0 2px;opacity:0.5;flex-shrink:0;color:#c0392b;font-weight:700;';
+    'font-size:12px;padding:0 4px;color:#c0392b;font-weight:700;';
 
   (function (oid, onum) {
     del.onclick = function (e) {
@@ -346,7 +400,7 @@ function criarItemLista(ul, orc) {
   li.appendChild(topo);
   li.appendChild(meta);
 
-  (function (oid, onum,orcamento) {
+  (function (oid, onum, orcamento) {
     li.onclick = function () {
       preencherFormulario(orcamento);
       estadoAtual.id     = oid;
@@ -415,10 +469,7 @@ function _buildPDF(d, logoB, seloB) {
   function chk(n) { if (y + n > RBOT) novaPag(); }
 
   function novaPag() {
-    doc.addPage();
-    cabecalho();
-    rst();
-    y = HEND + 6;
+    doc.addPage(); cabecalho(); rst(); y = HEND + 6;
   }
 
   function cabecalho() {
@@ -463,14 +514,17 @@ function _buildPDF(d, logoB, seloB) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text('Oficina de Turismo  -  Tel / WhatsApp: (35) 98862-2943  -  (35) 98844-5517',
-             cx, ry + 2, { align: 'center' });
-    doc.text('Instagram: @oficinadeturismo  -  Site: www.oficinatur.com.br',
-             cx, ry + 7, { align: 'center' });
+    doc.text(
+      'Oficina de Turismo  -  Tel / WhatsApp: (35) 98862-2943  -  (35) 98844-5517',
+      cx, ry + 2, { align: 'center' });
+    doc.text(
+      'Instagram: @oficinadeturismo  -  Site: www.oficinatur.com.br',
+      cx, ry + 7, { align: 'center' });
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 74, 125);
-    doc.text('30 anos de experiencia em viagens e grupos acompanhados',
-             cx, ry + 12, { align: 'center' });
+    doc.text(
+      '30 anos de experiencia em viagens e grupos acompanhados',
+      cx, ry + 12, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(180, 180, 180);
@@ -508,14 +562,13 @@ function _buildPDF(d, logoB, seloB) {
     if (!txt) return;
     rst();
     var lns = doc.splitTextToSize(txt, TW);
-    var lh  = 5.4;
     for (var i = 0; i < lns.length; i++) {
-      chk(lh);
+      chk(5.4);
       doc.setTextColor(40, 40, 40);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.text(lns[i], ML, y);
-      y += lh;
+      y += 5.4;
     }
     if (sp) y += sp;
   }
@@ -559,6 +612,105 @@ function _buildPDF(d, logoB, seloB) {
     y += 5;
   }
 
+  function linhaVoo(label, valor) {
+    if (!valor) return;
+    chk(6);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(30, 74, 125);
+    var lw = doc.getTextWidth(label + '  ');
+    doc.text(label, ML + 4, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(40, 40, 40);
+    doc.text(valor, ML + 4 + lw, y);
+    y += 5.8;
+  }
+
+  function secVoo(titulo, cia, numero, origem, destino, partida, chegada, obs) {
+    var temDados = cia || numero || origem || destino || partida || chegada || obs;
+    if (!temDados) return;
+    chk(40);
+
+    // fundo azul claro
+    doc.setFillColor(230, 240, 255);
+    doc.roundedRect(ML, y - 3, TW, 8, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(30, 74, 125);
+    doc.text(titulo, ML + 4, y + 2);
+    y += 10;
+
+    // tabela do voo
+    var colW = TW / 2 - 2;
+    if (cia || numero) {
+      doc.setFillColor(245, 248, 255);
+      doc.rect(ML, y - 3, TW, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(30, 74, 125);
+      doc.text('Cia Aerea:', ML + 2, y + 1);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40, 40, 40);
+      doc.text(cia || '-', ML + 24, y + 1);
+      if (numero) {
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 74, 125);
+        doc.text('Voo:', ML + colW + 2, y + 1);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(40, 40, 40);
+        doc.text(numero, ML + colW + 14, y + 1);
+      }
+      y += 7;
+    }
+
+    if (origem || destino) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(30, 74, 125);
+      doc.text('Origem:', ML + 2, y + 1);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40, 40, 40);
+      doc.text(origem || '-', ML + 20, y + 1);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 74, 125);
+      doc.text('Destino:', ML + colW + 2, y + 1);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40, 40, 40);
+      doc.text(destino || '-', ML + colW + 22, y + 1);
+      y += 7;
+    }
+
+    if (partida || chegada) {
+      doc.setFillColor(245, 248, 255);
+      doc.rect(ML, y - 3, TW, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(30, 74, 125);
+      doc.text('Partida:', ML + 2, y + 1);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40, 40, 40);
+      doc.text(partida || '-', ML + 20, y + 1);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 74, 125);
+      doc.text('Chegada:', ML + colW + 2, y + 1);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40, 40, 40);
+      doc.text(chegada || '-', ML + colW + 24, y + 1);
+      y += 7;
+    }
+
+    if (obs) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Obs: ' + obs, ML + 4, y + 1);
+      y += 7;
+    }
+    y += 3;
+  }
+
+  // ── CONSTROI O PDF ────────────────────────────────────────
+
   cabecalho();
   rst();
 
@@ -590,7 +742,6 @@ function _buildPDF(d, logoB, seloB) {
 
   rst();
   doc.setFontSize(9.5);
-
   var dadosBrutos = [
     d.cliente       ? ['Cliente:',     d.cliente]       : null,
     d.saida         ? ['Saida de:',    d.saida]         : null,
@@ -600,16 +751,13 @@ function _buildPDF(d, logoB, seloB) {
       return ['Data:', dp[2] + '/' + dp[1] + '/' + dp[0]];
     })() : null,
     d.numeroPessoas ? ['Passageiros:', d.numeroPessoas + ' pessoa(s)'] : null,
-    d.vendedor      ? ['Consultor:',   d.vendedor]      : null
+    d.vendedor      ? ['Consultor:',  d.vendedor]       : null
   ];
-
   var dados = [];
   for (var i = 0; i < dadosBrutos.length; i++) {
     if (dadosBrutos[i]) dados.push(dadosBrutos[i]);
   }
-
-  var c1 = ML;
-  var c2 = ML + TW / 2 + 4;
+  var c1 = ML, c2 = ML + TW / 2 + 4;
   for (var i = 0; i < dados.length; i++) {
     var xp = (i % 2 === 0) ? c1 : c2;
     if (i % 2 === 0 && i > 0) y += 6.5;
@@ -623,37 +771,99 @@ function _buildPDF(d, logoB, seloB) {
   }
   y += 10;
 
+  // VOOS
+  var temVoos = d.vooIdaCia || d.vooIdaOrigem || d.vooVoltaCia || d.vooVoltaOrigem;
+  if (temVoos) {
+    sec('INFORMACOES DE VOO');
+    secVoo('VOO DE IDA',
+      d.vooIdaCia, d.vooIdaNumero, d.vooIdaOrigem,
+      d.vooIdaDestino, d.vooIdaPartida, d.vooIdaChegada, d.vooIdaObs);
+    secVoo('VOO DE VOLTA',
+      d.vooVoltaCia, d.vooVoltaNumero, d.vooVoltaOrigem,
+      d.vooVoltaDestino, d.vooVoltaPartida, d.vooVoltaChegada, d.vooVoltaObs);
+  }
+
+  // ROTEIRO
   sec('ROTEIRO / PROGRAMACAO DA VIAGEM');
   bloco(d.roteiro, 5);
 
+  // INVESTIMENTO
   sec('INVESTIMENTO');
   campo('Valor por pessoa:', d.precoPorPessoa);
   if (d.ocupacao) campo('Base de ocupacao:', d.ocupacao);
 
+  var pp   = toFloat(d.precoPorPessoa);
+  var taxa = toFloat(d.taxaEmbarque);
+  var out  = toFloat(d.outrasTaxas);
   var np2  = parseInt(d.numeroPessoas, 10);
-  var raw2 = somenteNumeros(d.precoPorPessoa || '');
-  var pos2 = raw2.indexOf(',');
-  if (pos2 >= 0) raw2 = raw2.slice(0, pos2) + '.' + raw2.slice(pos2 + 1);
-  var pp2 = parseFloat(raw2);
-  if (np2 > 0 && pp2 > 0) {
-    campo('Total do grupo (' + np2 + ' pax):', brFmt(np2 * pp2));
+
+  if (taxa > 0) campo('Taxa de embarque por pessoa:', brFmt(taxa));
+  if (out  > 0) {
+    var descTaxa = d.outrasTaxasDesc ? d.outrasTaxasDesc : 'Outras taxas';
+    campo(descTaxa + ' por pessoa:', brFmt(out));
+  }
+
+  var totalPP = pp + taxa + out;
+  if (totalPP > 0) {
+    chk(8);
+    doc.setFillColor(230, 245, 235);
+    doc.roundedRect(ML, y - 3, TW, 8, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(44, 140, 58);
+    doc.text('Total por pessoa:', ML + 4, y + 2);
+    doc.text(brFmt(totalPP), PW - MR - 4, y + 2, { align: 'right' });
+    y += 10;
+  }
+
+  if (np2 > 0 && totalPP > 0) {
+    chk(8);
+    doc.setFillColor(220, 240, 225);
+    doc.roundedRect(ML, y - 3, TW, 8, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(30, 74, 125);
+    doc.text('Total do grupo (' + np2 + ' pax):', ML + 4, y + 2);
+    doc.text(brFmt(totalPP * np2), PW - MR - 4, y + 2, { align: 'right' });
+    y += 10;
   }
   y += 2;
 
-  if (d.pagamento) {
-    sec('FORMA DE PAGAMENTO');
-    bloco(d.pagamento, 5);
+  // FORMA DE PAGAMENTO
+  sec('FORMA DE PAGAMENTO');
+  var entrada  = toFloat(d.entrada);
+  var parcelas = parseInt(d.numeroParcelas, 10);
+  if (totalPP > 0 && parcelas > 0) {
+    if (entrada > 0) {
+      var restante  = totalPP - entrada;
+      var vlParcela = restante / parcelas;
+      campo('Entrada por pessoa:', brFmt(entrada));
+      campo(parcelas + ' parcelas de:', brFmt(vlParcela));
+      campo('Total por pessoa:', brFmt(totalPP));
+    } else {
+      var vlParcela = totalPP / parcelas;
+      campo(parcelas + ' parcelas de:', brFmt(vlParcela));
+      campo('Total por pessoa:', brFmt(totalPP));
+    }
+    if (np2 > 0) {
+      campo('Total do grupo:', brFmt(totalPP * np2));
+    }
   }
+  if (d.pagamento) bloco(d.pagamento, 3);
+  y += 2;
 
+  // INCLUI / NAO INCLUI
   if (d.inclui || d.naoInclui) {
     blocoDuplo('O PACOTE INCLUI', d.inclui, 'NAO INCLUI', d.naoInclui);
   }
 
+  // OBSERVACOES
   if (d.observacoes) {
     sec('OBSERVACOES / CONDICOES GERAIS');
     bloco(d.observacoes, 5);
   }
 
+  // rodape
   var tot = doc.getNumberOfPages();
   for (var p = 1; p <= tot; p++) {
     doc.setPage(p);
