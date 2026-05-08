@@ -27,24 +27,49 @@ function proximoNumero() {
 }
 
 function fmt(n) {
-  return String(n).padStart(3, '0');
+  var s = String(n);
+  while (s.length < 3) s = '0' + s;
+  return s;
 }
 
 function brFmt(v) {
-  return 'R$ ' + v.toFixed(2)
-    .replace('.', ',')
-    .replace(/
-\B
-(?=(\d{3})+(?!\d))/g, '.');
+  var partes = v.toFixed(2).split('.');
+  var inteiro = partes[0];
+  var decimal = partes[1];
+  var resultado = '';
+  var count = 0;
+  for (var i = inteiro.length - 1; i >= 0; i--) {
+    if (count > 0 && count % 3 === 0) resultado = '.' + resultado;
+    resultado = inteiro[i] + resultado;
+    count++;
+  }
+  return 'R$ ' + resultado + ',' + decimal;
+}
+
+function somenteNumeros(str) {
+  var r = '';
+  for (var i = 0; i < str.length; i++) {
+    var c = str[i];
+    if (c >= '0' && c <= '9') r += c;
+    if (c === ',' || c === '.') r += c;
+  }
+  return r;
 }
 
 function limparNome(str) {
-  var ok = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_- ';
-  var r  = '';
+  var ok = 'abcdefghijklmnopqrstuvwxyz' +
+           'ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
+           '0123456789_- ';
+  var r = '';
   for (var i = 0; i < str.length; i++) {
     if (ok.indexOf(str[i]) >= 0) r += str[i];
   }
-  return r.replace(/ /g, '_').slice(0, 25);
+  var resultado = '';
+  for (var i = 0; i < r.length; i++) {
+    resultado += (r[i] === ' ') ? '_' : r[i];
+  }
+  if (resultado.length > 25) resultado = resultado.slice(0, 25);
+  return resultado;
 }
 
 function mostrarBadge(numero) {
@@ -70,15 +95,14 @@ function calcularTotal() {
   if (!npEl || !ppEl || !totEl) return;
 
   var np  = parseInt(npEl.value, 10);
-  var raw = '';
-  for (var i = 0; i < ppEl.value.length; i++) {
-    var c = ppEl.value[i];
-    if ((c >= '0' && c <= '9') || c === ',' || c === '.') raw += c;
+  var raw = somenteNumeros(ppEl.value);
+  var pos = raw.indexOf(',');
+  if (pos >= 0) {
+    raw = raw.slice(0, pos) + '.' + raw.slice(pos + 1);
   }
-  raw = raw.replace(',', '.');
   var pp = parseFloat(raw);
 
-  if (!np || np <= 0 || isNaN(pp) || pp <= 0) {
+  if (isNaN(np) || np <= 0 || isNaN(pp) || pp <= 0) {
     totEl.textContent = '-';
     if (detEl) detEl.textContent = '';
     return;
@@ -142,10 +166,10 @@ function limparFormulario() {
   estadoAtual = { id: null, numero: null };
   ocultarBadge();
   var ids = [
-    'cliente','destino','periodo','saida','dataOrcamento',
-    'numeroPessoas','roteiro','precoPorPessoa','ocupacao',
-    'pagamento','observacoes','validade','vendedor',
-    'inclui','naoInclui'
+    'cliente', 'destino', 'periodo', 'saida', 'dataOrcamento',
+    'numeroPessoas', 'roteiro', 'precoPorPessoa', 'ocupacao',
+    'pagamento', 'observacoes', 'validade', 'vendedor',
+    'inclui', 'naoInclui'
   ];
   for (var i = 0; i < ids.length; i++) sv(ids[i], '');
   var elData = document.getElementById('dataOrcamento');
@@ -156,8 +180,10 @@ function limparFormulario() {
 }
 
 function obterLista() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch (e) { return []; }
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) { return []; }
 }
 
 function gravarLista(lista) {
@@ -171,7 +197,7 @@ function salvarOrcamento() {
     return;
   }
   var lista = obterLista();
-  var idx   = -1;
+  var idx = -1;
   for (var i = 0; i < lista.length; i++) {
     if (lista[i].id === d.id) { idx = i; break; }
   }
@@ -223,8 +249,8 @@ function filtrarLista() {
   var termo = el ? el.value.toLowerCase() : '';
   var items = document.querySelectorAll('.orcamento-item');
   for (var i = 0; i < items.length; i++) {
-    items[i].style.display =
-      items[i].textContent.toLowerCase().indexOf(termo) >= 0 ? '' : 'none';
+    var txt = items[i].textContent.toLowerCase();
+    items[i].style.display = (txt.indexOf(termo) >= 0) ? '' : 'none';
   }
 }
 
@@ -243,96 +269,99 @@ function carregarLista() {
     return;
   }
 
-  var ordenada = lista.slice().sort(function (a, b) { return b.id - a.id; });
+  var ordenada = lista.slice().sort(function (a, b) {
+    return b.id - a.id;
+  });
 
   for (var i = 0; i < ordenada.length; i++) {
-    (function (orc) {
-
-      var li        = document.createElement('li');
-      li.className  = 'orcamento-item';
-      li.dataset.id = String(orc.id);
-      if (orc.id === estadoAtual.id) li.classList.add('ativo');
-
-      if (orc.validade) {
-        var hoje = new Date().toISOString().split('T')[0];
-        li.style.borderLeft = orc.validade < hoje
-          ? '4px solid #c0392b'
-          : '4px solid #2c8c3a';
-      }
-
-      var topo = document.createElement('div');
-      topo.style.cssText =
-        'display:flex;align-items:flex-start;' +
-        'justify-content:space-between;gap:6px;';
-
-      var wrap = document.createElement('div');
-      wrap.style.cssText =
-        'display:flex;align-items:flex-start;gap:4px;flex:1;min-width:0;';
-
-      if (orc.numero) {
-        var numEl = document.createElement('span');
-        numEl.style.cssText =
-          'background:#2c8c3a;color:#fff;font-size:0.68rem;font-weight:700;' +
-          'border-radius:4px;padding:2px 6px;flex-shrink:0;';
-        numEl.textContent = fmt(orc.numero);
-        wrap.appendChild(numEl);
-      }
-
-      var txt = document.createElement('div');
-      txt.style.cssText =
-        'font-size:0.87rem;font-weight:600;color:#222;line-height:1.35;';
-      txt.textContent =
-        (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
-      wrap.appendChild(txt);
-
-      var del = document.createElement('button');
-      del.textContent   = 'X';
-      del.title         = 'Excluir';
-      del.style.cssText =
-        'border:none;background:transparent;cursor:pointer;' +
-        'font-size:13px;font-weight:700;color:#c0392b;' +
-        'padding:0 4px;opacity:0.5;flex-shrink:0;';
-      del.onmouseover = function () { this.style.opacity = '1'; };
-      del.onmouseout  = function () { this.style.opacity = '0.5'; };
-      del.onclick = function (e) {
-        e.stopPropagation();
-        if (confirm('Excluir orcamento N ' + fmt(orc.numero || 0) + '?')) {
-          excluirOrcamento(orc.id);
-        }
-      };
-
-      topo.appendChild(wrap);
-      topo.appendChild(del);
-
-      var meta = document.createElement('div');
-      meta.style.cssText = 'font-size:0.74rem;color:#888;margin-top:3px;';
-      var partes = [];
-      if (orc.dataOrcamento)
-        partes.push(orc.dataOrcamento.split('-').reverse().join('/'));
-      if (orc.periodo)       partes.push(orc.periodo);
-      if (orc.numeroPessoas) partes.push(orc.numeroPessoas + ' pax');
-      meta.textContent = partes.join(' | ') || '-';
-
-      li.appendChild(topo);
-      li.appendChild(meta);
-
-      li.onclick = function () {
-        preencherFormulario(orc);
-        estadoAtual.id     = orc.id;
-        estadoAtual.numero = orc.numero;
-        if (orc.numero) mostrarBadge(orc.numero);
-        var items = document.querySelectorAll('.orcamento-item');
-        for (var j = 0; j < items.length; j++) {
-          items[j].classList.remove('ativo');
-        }
-        li.classList.add('ativo');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      };
-
-      ul.appendChild(li);
-
-    })(ordenada[i]);
+    criarItemLista(ul, ordenada[i]);
   }
+}
+
+function criarItemLista(ul, orc) {
+  var hoje = new Date().toISOString().slice(0, 10);
+
+  var li = document.createElement('li');
+  li.className = 'orcamento-item';
+  li.setAttribute('data-id', String(orc.id));
+  if (orc.id === estadoAtual.id) li.className += ' ativo';
+  if (orc.validade) {
+    li.style.borderLeft = (orc.validade < hoje)
+      ? '4px solid #c0392b'
+      : '4px solid #2c8c3a';
+  }
+
+  var topo = document.createElement('div');
+  topo.style.cssText =
+    'display:flex;align-items:flex-start;justify-content:space-between;gap:6px;';
+
+  var wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;';
+
+  if (orc.numero) {
+    var numEl = document.createElement('span');
+    numEl.textContent = fmt(orc.numero);
+    numEl.style.cssText =
+      'background:#2c8c3a;color:#fff;font-size:0.68rem;' +
+      'font-weight:700;border-radius:4px;padding:2px 6px;flex-shrink:0;';
+    wrap.appendChild(numEl);
+  }
+
+  var titulo = document.createElement('div');
+  titulo.textContent =
+    (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
+  titulo.style.cssText = 'font-size:0.87rem;font-weight:600;color:#222;';
+  wrap.appendChild(titulo);
+
+  var del = document.createElement('button');
+  del.textContent = 'X';
+  del.title       = 'Excluir';
+  del.style.cssText =
+    'border:none;background:transparent;cursor:pointer;' +
+    'font-size:12px;padding:0 2px;opacity:0.5;flex-shrink:0;color:#c0392b;font-weight:700;';
+
+  (function (oid, onum) {
+    del.onclick = function (e) {
+      e.stopPropagation();
+      if (confirm('Excluir orcamento N ' + fmt(onum || 0) + '?')) {
+        excluirOrcamento(oid);
+      }
+    };
+  })(orc.id, orc.numero);
+
+  topo.appendChild(wrap);
+  topo.appendChild(del);
+
+  var meta = document.createElement('div');
+  meta.style.cssText = 'font-size:0.74rem;color:#888;margin-top:3px;';
+  var partes = [];
+  if (orc.dataOrcamento) {
+    var dp = orc.dataOrcamento.split('-');
+    partes.push(dp[2] + '/' + dp[1] + '/' + dp[0]);
+  }
+  if (orc.periodo)       partes.push(orc.periodo);
+  if (orc.numeroPessoas) partes.push(orc.numeroPessoas + ' pax');
+  meta.textContent = partes.length ? partes.join(' | ') : '-';
+
+  li.appendChild(topo);
+  li.appendChild(meta);
+
+  (function (oid, onum,orcamento) {
+    li.onclick = function () {
+      preencherFormulario(orcamento);
+      estadoAtual.id     = oid;
+      estadoAtual.numero = onum;
+      if (onum) mostrarBadge(onum);
+      var items = document.querySelectorAll('.orcamento-item');
+      for (var j = 0; j < items.length; j++) {
+        items[j].className = 'orcamento-item';
+      }
+      li.className = 'orcamento-item ativo';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+  })(orc.id, orc.numero, orc);
+
+  ul.appendChild(li);
 }
 
 function imgBase64(src) {
@@ -368,7 +397,6 @@ function gerarPDF() {
 }
 
 function _buildPDF(d, logoB, seloB) {
-
   var jsPDF = window.jspdf.jsPDF;
   var doc   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
@@ -387,7 +415,10 @@ function _buildPDF(d, logoB, seloB) {
   function chk(n) { if (y + n > RBOT) novaPag(); }
 
   function novaPag() {
-    doc.addPage(); cabecalho(); rst(); y = HEND + 6;
+    doc.addPage();
+    cabecalho();
+    rst();
+    y = HEND + 6;
   }
 
   function cabecalho() {
@@ -424,24 +455,22 @@ function _buildPDF(d, logoB, seloB) {
   }
 
   function rodape(pag, tot) {
-    var ry = PH - 20, cx = PW / 2;
+    var ry = PH - 20;
+    var cx = PW / 2;
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.25);
     doc.line(ML, ry - 2, PW - MR, ry - 2);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text(
-      'Oficina de Turismo  -  Tel / WhatsApp: (35) 98862-2943  -  (35) 98844-5517',
-      cx, ry + 2, { align: 'center' });
-    doc.text(
-      'Instagram: @oficinadeturismo  -  Site: www.oficinatur.com.br',
-      cx, ry + 7, { align: 'center' });
+    doc.text('Oficina de Turismo  -  Tel / WhatsApp: (35) 98862-2943  -  (35) 98844-5517',
+             cx, ry + 2, { align: 'center' });
+    doc.text('Instagram: @oficinadeturismo  -  Site: www.oficinatur.com.br',
+             cx, ry + 7, { align: 'center' });
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 74, 125);
-    doc.text(
-      '30 anos de experiencia em viagens e grupos acompanhados',
-      cx, ry + 12, { align: 'center' });
+    doc.text('30 anos de experiencia em viagens e grupos acompanhados',
+             cx, ry + 12, { align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(180, 180, 180);
@@ -518,15 +547,14 @@ function _buildPDF(d, logoB, seloB) {
     var lns1 = txt1 ? doc.splitTextToSize(txt1, cw - 2) : [];
     var lns2 = txt2 ? doc.splitTextToSize(txt2, cw - 2) : [];
     var max  = Math.max(lns1.length, lns2.length);
-    var lh   = 5.4;
     for (var i = 0; i < max; i++) {
-      chk(lh);
+      chk(5.4);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(40, 40, 40);
       if (lns1[i]) doc.text(lns1[i], c1, y);
       if (lns2[i]) doc.text(lns2[i], c2, y);
-      y += lh;
+      y += 5.4;
     }
     y += 5;
   }
@@ -555,39 +583,43 @@ function _buildPDF(d, logoB, seloB) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8.5);
     doc.setTextColor(180, 100, 0);
-    doc.text('Valido ate: ' + d.validade.split('-').reverse().join('/'),
+    var vp = d.validade.split('-');
+    doc.text('Valido ate: ' + vp[2] + '/' + vp[1] + '/' + vp[0],
              PW - MR, y - 4, { align: 'right' });
   }
 
   rst();
   doc.setFontSize(9.5);
-  var c1 = ML, c2 = ML + TW / 2 + 4;
-  var dados = [
-    d.cliente       ? ['Cliente:',     d.cliente]     : null,
-    d.saida         ? ['Saida de:',    d.saida]       : null,
-    d.periodo       ? ['Periodo:',     d.periodo]     : null,
-    d.dataOrcamento ? ['Data:',
-      d.dataOrcamento.split('-').reverse().join('/')]  : null,
-    d.numeroPessoas ? ['Passageiros:',
-      d.numeroPessoas + ' pessoa(s)']                 : null,
-    d.vendedor      ? ['Consultor:',   d.vendedor]    : null
+
+  var dadosBrutos = [
+    d.cliente       ? ['Cliente:',     d.cliente]       : null,
+    d.saida         ? ['Saida de:',    d.saida]         : null,
+    d.periodo       ? ['Periodo:',     d.periodo]       : null,
+    d.dataOrcamento ? (function () {
+      var dp = d.dataOrcamento.split('-');
+      return ['Data:', dp[2] + '/' + dp[1] + '/' + dp[0]];
+    })() : null,
+    d.numeroPessoas ? ['Passageiros:', d.numeroPessoas + ' pessoa(s)'] : null,
+    d.vendedor      ? ['Consultor:',   d.vendedor]      : null
   ];
 
-  var dadosFiltrados = [];
-  for (var i = 0; i < dados.length; i++) {
-    if (dados[i]) dadosFiltrados.push(dados[i]);
+  var dados = [];
+  for (var i = 0; i < dadosBrutos.length; i++) {
+    if (dadosBrutos[i]) dados.push(dadosBrutos[i]);
   }
 
-  for (var i = 0; i < dadosFiltrados.length; i++) {
+  var c1 = ML;
+  var c2 = ML + TW / 2 + 4;
+  for (var i = 0; i < dados.length; i++) {
     var xp = (i % 2 === 0) ? c1 : c2;
     if (i % 2 === 0 && i > 0) y += 6.5;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 74, 125);
-    var lw = doc.getTextWidth(dadosFiltrados[i][0] + ' ');
-    doc.text(dadosFiltrados[i][0], xp, y);
+    var lw = doc.getTextWidth(dados[i][0] + ' ');
+    doc.text(dados[i][0], xp, y);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(40, 40, 40);
-    doc.text(dadosFiltrados[i][1], xp + lw, y);
+    doc.text(dados[i][1], xp + lw, y);
   }
   y += 10;
 
@@ -598,13 +630,11 @@ function _buildPDF(d, logoB, seloB) {
   campo('Valor por pessoa:', d.precoPorPessoa);
   if (d.ocupacao) campo('Base de ocupacao:', d.ocupacao);
 
-  var np2 = parseInt(d.numeroPessoas, 10);
-  var raw = '';
-  for (var i = 0; i < (d.precoPorPessoa || '').length; i++) {
-    var c = d.precoPorPessoa[i];
-    if ((c >= '0' && c <= '9') || c === ',' || c === '.') raw += c;
-  }
-  var pp2 = parseFloat(raw.replace(',', '.'));
+  var np2  = parseInt(d.numeroPessoas, 10);
+  var raw2 = somenteNumeros(d.precoPorPessoa || '');
+  var pos2 = raw2.indexOf(',');
+  if (pos2 >= 0) raw2 = raw2.slice(0, pos2) + '.' + raw2.slice(pos2 + 1);
+  var pp2 = parseFloat(raw2);
   if (np2 > 0 && pp2 > 0) {
     campo('Total do grupo (' + np2 + ' pax):', brFmt(np2 * pp2));
   }
@@ -631,7 +661,10 @@ function _buildPDF(d, logoB, seloB) {
   }
 
   var nd  = limparNome(d.destino || 'Oficina');
-  var nc  = limparNome(d.cliente || '').slice(0, 20);
+  var nc  = limparNome(d.cliente || '');
+  if (nc.length > 20) nc = nc.slice(0, 20);
   var num = d.numero ? '_' + fmt(d.numero) : '';
-  doc.save('Orcamento' + num + '_' + nd + (nc ? '_' + nc : '') + '.pdf');
+  var nomeFinal = 'Orcamento' + num + '_' + nd;
+  if (nc) nomeFinal += '_' + nc;
+  doc.save(nomeFinal + '.pdf');
 }
