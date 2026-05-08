@@ -4,6 +4,7 @@ var estadoAtual = { id: null, numero: null };
 var voosIda     = [];
 var voosVolta   = [];
 var vooIdxCtrl  = 0;
+var fotoDestinoBase64 = null; // Para a foto do destino
 
 window.addEventListener('load', function () {
   document.getElementById('btnSalvar').onclick   = salvarOrcamento;
@@ -33,6 +34,32 @@ window.addEventListener('load', function () {
   adicionarVoo('volta');
   carregarLista();
 });
+
+// ── FOTO DO DESTINO ───────────────────────────────────────
+
+function previewFoto(input) {
+  if (!input.files || !input.files[0]) return;
+  var file   = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    fotoDestinoBase64 = e.target.result;
+    var img = document.getElementById('previewFotoImg');
+    var box = document.getElementById('previewFotoBox');
+    if (img) img.src = fotoDestinoBase64;
+    if (box) box.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerFoto() {
+  fotoDestinoBase64 = null;
+  var input = document.getElementById('fotoDestino');
+  var img   = document.getElementById('previewFotoImg');
+  var box   = document.getElementById('previewFotoBox');
+  if (input) input.value = '';
+  if (img)   img.src     = '';
+  if (box)   box.style.display = 'none';
+}
 
 // ── VOOS ──────────────────────────────────────────────────
 
@@ -80,7 +107,6 @@ function adicionarVoo(tipo) {
   cabec.appendChild(btnRem);
   div.appendChild(cabec);
 
-  // CAMPOS — data e hora SEPARADOS para partida e chegada
   var linhas = [
     [
       { id: 'cia',            label: 'Cia Aerea',
@@ -389,7 +415,8 @@ function lerFormulario() {
     inclui:          gv('inclui'),
     naoInclui:       gv('naoInclui'),
     voosIda:         lerVoos('ida'),
-    voosVolta:       lerVoos('volta')
+    voosVolta:       lerVoos('volta'),
+    fotoDestino:     fotoDestinoBase64 // Salva a foto em base64
   };
 }
 
@@ -416,6 +443,18 @@ function preencherFormulario(d) {
   sv('naoInclui',       d.naoInclui);
   preencherVoos('ida',   d.voosIda   || []);
   preencherVoos('volta', d.voosVolta || []);
+
+  // Preencher foto do destino
+  fotoDestinoBase64 = d.fotoDestino || null;
+  var img = document.getElementById('previewFotoImg');
+  var box = document.getElementById('previewFotoBox');
+  if (fotoDestinoBase64 && img && box) {
+    img.src = fotoDestinoBase64;
+    box.style.display = 'block';
+  } else if (box) {
+    box.style.display = 'none';
+  }
+
   calcularTotal();
 }
 
@@ -440,6 +479,7 @@ function limparFormulario() {
   if (cVolta) cVolta.innerHTML = '';
   adicionarVoo('ida');
   adicionarVoo('volta');
+  removerFoto(); // Limpa a foto do destino
   calcularTotal();
   carregarLista();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -522,8 +562,8 @@ function filtrarLista() {
   var termo = el ? el.value.toLowerCase() : '';
   var items = document.querySelectorAll('.orcamento-item');
   for (var i = 0; i < items.length; i++) {
-    var txt = items[i].textContent.toLowerCase();
-    items[i].style.display = (txt.indexOf(termo) >= 0) ? '' : 'none';
+    items[i].style.display =
+      items[i].textContent.toLowerCase().indexOf(termo) >= 0 ? '' : 'none';
   }
 }
 
@@ -535,7 +575,6 @@ function carregarLista() {
   var cnt   = document.getElementById('sidebarCount');
   ul.innerHTML = '';
   if (cnt) cnt.textContent = lista.length;
-
   if (!lista.length) {
     var li = document.createElement('li');
     li.textContent   = 'Nenhum orcamento salvo ainda.';
@@ -543,10 +582,7 @@ function carregarLista() {
     ul.appendChild(li);
     return;
   }
-
-  var ordenada = lista.slice().sort(function (a, b) {
-    return b.id - a.id;
-  });
+  var ordenada = lista.slice().sort(function (a, b) { return b.id - a.id; });
   for (var i = 0; i < ordenada.length; i++) {
     criarItemLista(ul, ordenada[i]);
   }
@@ -560,8 +596,7 @@ function criarItemLista(ul, orc) {
   if (orc.id === estadoAtual.id) li.className += ' ativo';
   if (orc.validade) {
     li.style.borderLeft = (orc.validade < hoje)
-      ? '4px solid #c0392b'
-      : '4px solid #2c8c3a';
+      ? '4px solid #c0392b' : '4px solid #2c8c3a';
   }
 
   var topo = document.createElement('div');
@@ -570,8 +605,7 @@ function criarItemLista(ul, orc) {
     'justify-content:space-between;gap:6px;';
 
   var wrap = document.createElement('div');
-  wrap.style.cssText =
-    'display:flex;align-items:flex-start;gap:4px;flex:1;';
+  wrap.style.cssText = 'display:flex;align-items:flex-start;gap:4px;flex:1;';
 
   if (orc.numero) {
     var numEl = document.createElement('span');
@@ -585,21 +619,22 @@ function criarItemLista(ul, orc) {
   var titulo = document.createElement('div');
   titulo.textContent =
     (orc.cliente || 'Sem nome') + ' - ' + (orc.destino || 'Sem destino');
-  titulo.style.cssText =
-    'font-size:0.87rem;font-weight:600;color:#222;';
+  titulo.style.cssText = 'font-size:0.87rem;font-weight:600;color:#222;';
   wrap.appendChild(titulo);
 
   var del = document.createElement('button');
   del.textContent   = 'X';
-  del.title         = 'Excluir';
+  del.title         = 'Excluir orcamento';
   del.style.cssText =
-    'background:none;border:none;color:#c0392b;' +
-    'font-weight:700;cursor:pointer;font-size:0.85rem;' +
-    'padding:0 2px;flex-shrink:0;';
-  (function (oid) {
+    'background:#f0f0f0;border:1px solid #ccc;color:#888;' +
+    'font-size:0.7rem;padding:2px 6px;border-radius:4px;' +
+    'cursor:pointer;flex-shrink:0;margin-left:auto;';
+  (function (id) {
     del.onclick = function (e) {
       e.stopPropagation();
-      if (confirm('Excluir este orcamento?')) excluirOrcamento(oid);
+      if (confirm('Tem certeza que deseja excluir este orcamento?')) {
+        excluirOrcamento(id);
+      }
     };
   })(orc.id);
 
@@ -608,11 +643,13 @@ function criarItemLista(ul, orc) {
   li.appendChild(topo);
 
   var sub = document.createElement('div');
-  sub.style.cssText =
-    'font-size:0.75rem;color:#666;margin-top:3px;';
+  sub.style.cssText = 'font-size:0.75rem;color:#666;margin-top:2px;';
   var partes = [];
-  if (orc.periodo)   partes.push(orc.periodo);
-  if (orc.vendedor)  partes.push(orc.vendedor);
+  if (orc.periodo) partes.push(orc.periodo);
+  if (orc.dataOrcamento) {
+    var dp = orc.dataOrcamento.split('-');
+    partes.push('Criado: ' + dp[2] + '/' + dp[1] + '/' + dp[0]);
+  }
   if (orc.validade) {
     var vp = orc.validade.split('-');
     var vStr = 'Val: ' + vp[2] + '/' + vp[1] + '/' + vp[0];
@@ -654,7 +691,7 @@ function imgBase64(src) {
       } catch (e) { resolve(null); }
     };
     img.onerror = function () { resolve(null); };
-    img.src = src + '?v=' + Date.now();
+    img.src = src + '?v=' + Date.now(); // Adiciona timestamp para evitar cache
   });
 }
 
@@ -668,11 +705,11 @@ function gerarPDF() {
     imgBase64('logo-oficina.png'),
     imgBase64('selo30anos.png')
   ]).then(function (imgs) {
-    _buildPDF(d, imgs[0], imgs[1]);
+    _buildPDF(d, imgs[0], imgs[1], fotoDestinoBase64);
   });
 }
 
-function _buildPDF(d, logoB, seloB) {
+function _buildPDF(d, logoB, seloB, fotoB) {
   var jsPDF = window.jspdf.jsPDF;
   var doc   = new jsPDF({
     orientation: 'portrait', unit: 'mm', format: 'a4'
@@ -996,6 +1033,21 @@ function _buildPDF(d, logoB, seloB) {
   doc.setLineWidth(0.6);
   doc.line(ML, y + 1, PW - MR, y + 1);
   y += 8;
+
+  // FOTO DO DESTINO NO PDF
+  if (fotoB) {
+    try {
+      var fotoH = 65;
+      var fotoW = TW;
+      chk(fotoH + 4);
+      doc.addImage(fotoB, 'JPEG', ML, y, fotoW, fotoH,
+                   '', 'FAST');
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.rect(ML, y, fotoW, fotoH);
+      y += fotoH + 5;
+    } catch (e) {}
+  }
 
   if (d.validade) {
     doc.setFont('helvetica', 'bold');
