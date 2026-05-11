@@ -1156,20 +1156,26 @@ function _buildPDF(d, logoB, seloB, fotoB) {
   var entradaV  = toFloat(d.entrada);
   var parcelasV = parseInt(d.numeroParcelas, 10);
   if (totalPP > 0 && parcelasV > 0) {
-    var vlParcela = 0;
+    var vlParcelaPorPessoa = 0;
+    var vlParcelaTotalGrupo = 0;
+    var entradaTotalGrupo = entradaV * np2; // Calcula a entrada total do grupo
+
     if (entradaV > 0) {
-      vlParcela = (totalPP - entradaV) / parcelasV;
-      campo('Entrada por pessoa:', brFmt(entradaV));
-      campo(parcelasV + ' parcelas de:', brFmt(vlParcela));
+      vlParcelaPorPessoa = (totalPP - entradaV) / parcelasV;
+      vlParcelaTotalGrupo = vlParcelaPorPessoa * np2; // Parcela do grupo
+      campo('Entrada (grupo):', brFmt(entradaTotalGrupo)); // Mostra a entrada total do grupo
+      campo(parcelasV + ' parcelas de:', brFmt(vlParcelaTotalGrupo)); // Mostra a parcela total do grupo
     } else {
-      vlParcela = totalPP / parcelasV;
-      campo(parcelasV + ' parcelas de:', brFmt(vlParcela));
+      vlParcelaPorPessoa = totalPP / parcelasV;
+      vlParcelaTotalGrupo = vlParcelaPorPessoa * np2; // Parcela do grupo
+      campo(parcelasV + ' parcelas de:', brFmt(vlParcelaTotalGrupo)); // Mostra a parcela total do grupo
     }
     campo('Total por pessoa:', brFmt(totalPP));
     if (np2 > 0) campo('Total do grupo:', brFmt(totalPP * np2));
   }
   if (d.pagamento) bloco(d.pagamento, 3);
   y += 2;
+
 
   if (d.inclui || d.naoInclui) {
     blocoDuplo('O PACOTE INCLUI', d.inclui, 'NAO INCLUI', d.naoInclui);
